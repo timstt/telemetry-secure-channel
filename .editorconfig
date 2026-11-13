@@ -1,0 +1,25 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml,csproj,props,sln}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.cs]
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_prefer_braces = true:warning
+dotnet_sort_system_directives_first = true
+csharp_style_var_for_built_in_types = true:silent
+# IDE0005 (зайві using) — помилка збірки, щоб format і build узгоджувались.
+dotnet_diagnostic.IDE0005.severity = warning
+# CA1716: Select/Order — назви з контракту в завданні; проєкт лише на C#.
+dotnet_diagnostic.CA1716.severity = none

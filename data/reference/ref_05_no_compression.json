@@ -1,0 +1,271 @@
+{
+  "опис": "Режим NO_COMPRESSION, сирі байти.",
+  "довжина_пакета": 473,
+  "довжина_шифротексту": 398,
+  "пароль": "algo2026",
+  "salt_hex": "000102030405060708090a0b0c0d0e0f",
+  "nonce_hex": "010203040506070800000004",
+  "flags": 8,
+  "frame_count": 32,
+  "таблиця_кодів": [],
+  "bitstream_hex": "00000036047200e5fffd040100000065047100e5000d040000000098047100e6000e0400000000cc047000e4fff10400000000fb047000e4000704000000012b047000e4fff4040000000160047100e4fff604000000018f047100e4fffc0400000001be047200e400050400000001f0047300e4fffc04000000021f047300e4fff6040100000250047300e4ffff040000000287047200e4000b0400000002b7047200e4000d0400000002e4047200e50000040000000317047300e50007040000000344047400e50010040000000373047200e5fff90400000003a5047400e500000400000003da047200e5fff9040000000410047000e5fffc04010000043f047000e5fffc04000000046f046f00e4ffee0400000004a6047100e400190400000004d7047200e4fff7040000000507047100e4000304000000053d047100e3ffec04000000056e047300e3000b0400000005a4047600e300000400000005d7047600e2ffeb040000000608047600e2fff9040100000635047400e3001b0400",
+  "class_table": null,
+  "кадри": [
+    {
+      "timestamp_ms": 54,
+      "altitude_dm": 1138,
+      "temp_c10": 229,
+      "vibration": -3,
+      "mode": 4,
+      "critical": 1
+    },
+    {
+      "timestamp_ms": 101,
+      "altitude_dm": 1137,
+      "temp_c10": 229,
+      "vibration": 13,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 152,
+      "altitude_dm": 1137,
+      "temp_c10": 230,
+      "vibration": 14,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 204,
+      "altitude_dm": 1136,
+      "temp_c10": 228,
+      "vibration": -15,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 251,
+      "altitude_dm": 1136,
+      "temp_c10": 228,
+      "vibration": 7,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 299,
+      "altitude_dm": 1136,
+      "temp_c10": 228,
+      "vibration": -12,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 352,
+      "altitude_dm": 1137,
+      "temp_c10": 228,
+      "vibration": -10,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 399,
+      "altitude_dm": 1137,
+      "temp_c10": 228,
+      "vibration": -4,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 446,
+      "altitude_dm": 1138,
+      "temp_c10": 228,
+      "vibration": 5,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 496,
+      "altitude_dm": 1139,
+      "temp_c10": 228,
+      "vibration": -4,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 543,
+      "altitude_dm": 1139,
+      "temp_c10": 228,
+      "vibration": -10,
+      "mode": 4,
+      "critical": 1
+    },
+    {
+      "timestamp_ms": 592,
+      "altitude_dm": 1139,
+      "temp_c10": 228,
+      "vibration": -1,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 647,
+      "altitude_dm": 1138,
+      "temp_c10": 228,
+      "vibration": 11,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 695,
+      "altitude_dm": 1138,
+      "temp_c10": 228,
+      "vibration": 13,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 740,
+      "altitude_dm": 1138,
+      "temp_c10": 229,
+      "vibration": 0,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 791,
+      "altitude_dm": 1139,
+      "temp_c10": 229,
+      "vibration": 7,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 836,
+      "altitude_dm": 1140,
+      "temp_c10": 229,
+      "vibration": 16,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 883,
+      "altitude_dm": 1138,
+      "temp_c10": 229,
+      "vibration": -7,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 933,
+      "altitude_dm": 1140,
+      "temp_c10": 229,
+      "vibration": 0,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 986,
+      "altitude_dm": 1138,
+      "temp_c10": 229,
+      "vibration": -7,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 1040,
+      "altitude_dm": 1136,
+      "temp_c10": 229,
+      "vibration": -4,
+      "mode": 4,
+      "critical": 1
+    },
+    {
+      "timestamp_ms": 1087,
+      "altitude_dm": 1136,
+      "temp_c10": 229,
+      "vibration": -4,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 1135,
+      "altitude_dm": 1135,
+      "temp_c10": 228,
+      "vibration": -18,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 1190,
+      "altitude_dm": 1137,
+      "temp_c10": 228,
+      "vibration": 25,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 1239,
+      "altitude_dm": 1138,
+      "temp_c10": 228,
+      "vibration": -9,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 1287,
+      "altitude_dm": 1137,
+      "temp_c10": 228,
+      "vibration": 3,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 1341,
+      "altitude_dm": 1137,
+      "temp_c10": 227,
+      "vibration": -20,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 1390,
+      "altitude_dm": 1139,
+      "temp_c10": 227,
+      "vibration": 11,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 1444,
+      "altitude_dm": 1142,
+      "temp_c10": 227,
+      "vibration": 0,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 1495,
+      "altitude_dm": 1142,
+      "temp_c10": 226,
+      "vibration": -21,
+      "mode": 4,
+      "critical": 0
+    },
+    {
+      "timestamp_ms": 1544,
+      "altitude_dm": 1142,
+      "temp_c10": 226,
+      "vibration": -7,
+      "mode": 4,
+      "critical": 1
+    },
+    {
+      "timestamp_ms": 1589,
+      "altitude_dm": 1140,
+      "temp_c10": 227,
+      "vibration": 27,
+      "mode": 4,
+      "critical": 0
+    }
+  ]
+}
