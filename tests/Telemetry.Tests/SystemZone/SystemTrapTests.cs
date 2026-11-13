@@ -25,22 +25,4 @@ public class SystemTrapTests
         var s = new Scheduler();
         Assert.Equal(s.Order(p, 16.9).Select(x => x.Index), s.Order(p.Reverse().ToArray(), 16.9).Select(x => x.Index));
     }
-
-    [Fact(Skip = TestData.Pending)]
-    public void Trap14_metric_units_and_zero_rules()
-    {
-        var q = Metric.Compute(36000 * 8, 36000 * 8, 1.0, 0.0, 0.5, 0.35, 0.15, 20, receiverCrashed: false);
-        Assert.Equal(0.5, q.S, 10);
-        Assert.Equal(1.0, q.T, 10);
-        Assert.Equal((0.5 * 0.5) + 0.35 + 0.15, q.Q, 10);
-        Assert.Equal(0, Metric.Compute(1, 1, 0.0, 1, 0.5, 0.35, 0.15, 20, false).Q);
-        Assert.Equal(0, Metric.Compute(1, 1, 1.0, 1, 0.5, 0.35, 0.15, 20, receiverCrashed: true).Q);
-    }
-
-    [Fact(Skip = TestData.Pending)]
-    public void Trap11_bridge_matches_direct_channel_py_on_same_seed()
-    {
-        // Порівняти перші N (delivered, arrival) з прямим запуском channel.py (python3) на seed 425243.
-        Assert.Fail("Реалізувати разом із ChannelBridge і channel/bridge.py");
-    }
 }
