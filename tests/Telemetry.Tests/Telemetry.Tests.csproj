@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- У тестах назви методів з підкресленнями і без XML-коментарів — норма. -->
+    <NoWarn>$(NoWarn);CA1707;CA1515;CA1861</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.msbuild" Version="6.0.2">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Telemetry.Core\Telemetry.Core.csproj" />
+    <ProjectReference Include="..\..\src\Telemetry.Huffman\Telemetry.Huffman.csproj" />
+    <ProjectReference Include="..\..\src\Telemetry.Predict\Telemetry.Predict.csproj" />
+    <ProjectReference Include="..\..\src\Telemetry.Security\Telemetry.Security.csproj" />
+    <ProjectReference Include="..\..\src\Telemetry.Packet\Telemetry.Packet.csproj" />
+    <ProjectReference Include="..\..\src\Telemetry.Packing\Telemetry.Packing.csproj" />
+    <ProjectReference Include="..\..\src\Telemetry.Optimize\Telemetry.Optimize.csproj" />
+    <ProjectReference Include="..\..\src\Telemetry.System\Telemetry.System.csproj" />
+  </ItemGroup>
+
+</Project>

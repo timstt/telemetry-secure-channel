@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Telemetry.Packet</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Telemetry.Core\Telemetry.Core.csproj" />
+    <ProjectReference Include="..\Telemetry.Security\Telemetry.Security.csproj" />
+    <ProjectReference Include="..\Telemetry.Huffman\Telemetry.Huffman.csproj" />
+  </ItemGroup>
+
+</Project>
