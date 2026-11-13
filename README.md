@@ -32,7 +32,14 @@ dotnet test
 
 ```bash
 dotnet run --project src/Telemetry.Runner
+dotnet run --project src/Telemetry.Runner -- --seeds 1,2,3,4,5 --scenarios аварійний --limit 120
 ```
+
+Seed за замовчуванням: відкритий `425243` і чотири похідні (`425244…425247`). Результати пишуться атомарно
+(`*.tmp` + заміна): `out/results.json`, `out/results.csv`, `out/recovered/<сценарій>_<seed>.csv`; журнал з усіма
+винятками і без пароля: `out/runner.log`. Код виходу: 0 — усі прогони завершено в ліміті, 1 — є незавершені,
+2 — помилка аргументів чи конфігурації, 3 — перевищено ліміт часу. Поки зони Sender/Receiver/Frame — заглушки,
+прогони завершуються статусом `Failed` з `NotImplementedException` у журналі; це очікувано.
 
 Ті самі перевірки, що в CI (запускати перед кожним PR):
 
