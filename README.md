@@ -179,4 +179,5 @@ S = B_ref / (B_ref + B_sent)     R = частка відновлених кри�
 | CI падає на `dotnet format` | запустити `dotnet format` локально і закомітити |
 | CI падає на покритті | додати тести або (лише для ще не реалізованих заглушок) лишити `[ExcludeFromCodeCoverage]` |
 | CI падає на перевірці `channel.py` | файл змінено (зокрема переведенням рядків) — відновити: `git checkout main -- channel/channel.py` |
+| `ChannelBridge`: не запускається Python | задати інтерпретатор: `TELEMETRY_PYTHON=py` (Windows) або повний шлях; за замовчуванням `python` на Windows, `python3` деінде |
 | Тести не бачать `data/` | тести шукають корінь за `Telemetry.sln`; запускати з будь-якої теки всередині репозиторію |
