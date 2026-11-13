@@ -40,6 +40,8 @@ public class ChannelBridgeTests
             RedirectStandardOutput = true,
             UseShellExecute = false,
             StandardOutputEncoding = new global::System.Text.UTF8Encoding(false),
+            // Без цього на Windows stdin пишеться в кодовій сторінці консолі і кирилиця сценарію ламається.
+            StandardInputEncoding = new global::System.Text.UTF8Encoding(false),
         };
         psi.ArgumentList.Add("-I");
         psi.ArgumentList.Add("-X");
