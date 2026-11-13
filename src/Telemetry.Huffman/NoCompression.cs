@@ -1,18 +1,41 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace Telemetry.Huffman;
 
 /// <summary>
-/// Свідома відмова від стиснення (C2 п.5, прапорець NO_COMPRESSION = 0x08):
-/// table_nsym = 0, bitstream_len = symbol_count, сирі байти. Власник: Саша.
+/// Відмова від стиснення (прапорець NO_COMPRESSION = 0x08):
+/// table_nsym = 0, bitstream_len = symbol_count, сирі байти.
 /// </summary>
-[ExcludeFromCodeCoverage(Justification = "Заглушка каркаса; прибрати атрибут разом з реалізацією")]
 public static class NoCompression
 {
     /// <summary>Ентропія Шеннона байтів, біт/символ.</summary>
-    public static double Entropy(ReadOnlySpan<byte> data) => throw new NotImplementedException();
+    public static double Entropy(ReadOnlySpan<byte> data)
+    {
+        if (data.IsEmpty)
+        {
+            return 0;
+        }
 
-    /// <summary>Чи вигідніше писати сирі байти (поріг ентропії — ген ГА, пастка 19).</summary>
+        Span<int> counts = stackalloc int[256];
+        foreach (var b in data)
+        {
+            counts[b]++;
+        }
+
+        var entropy = 0.0;
+        foreach (var c in counts)
+        {
+            if (c == 0)
+            {
+                continue;
+            }
+
+            var p = (double)c / data.Length;
+            entropy -= p * Math.Log2(p);
+        }
+
+        return entropy;
+    }
+
+    /// <summary>Чи вигідніше писати сирі байти: ентропія не нижча за поріг.</summary>
     public static bool ShouldSkipCompression(ReadOnlySpan<byte> data, double entropyThreshold) =>
-        throw new NotImplementedException();
+        !data.IsEmpty && Entropy(data) >= entropyThreshold;
 }

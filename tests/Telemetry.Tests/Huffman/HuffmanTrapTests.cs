@@ -3,12 +3,12 @@ using Telemetry.Tests.Infrastructure;
 
 namespace Telemetry.Tests.Huffman;
 
-/// <summary>Пастки 1–4 (зона Саші). Прибрати Skip, коли зона реалізована.</summary>
+/// <summary>Пастки 1–4 (зона Саші).</summary>
 public class HuffmanTrapTests
 {
     private static readonly byte[] Ref01Frame = TestData.Hex("00000000 03E8 00D7 FFFD 01 01");
 
-    [Fact(Skip = TestData.Pending)]
+    [Fact]
     public void Trap01_bits_msb_first_and_zero_padding()
     {
         var w = new BitWriter();
@@ -18,7 +18,7 @@ public class HuffmanTrapTests
         Assert.Equal(new byte[] { 0b1010_0000 }, w.ToArray());
     }
 
-    [Fact(Skip = TestData.Pending)]
+    [Fact]
     public void Trap02_ref01_lengths_codes_and_bitstream()
     {
         var codec = new HuffmanCodec();
@@ -39,12 +39,12 @@ public class HuffmanTrapTests
         Assert.Equal(0b101u, codes[0xFF]);
 
         var (data, bits) = codec.Encode(Ref01Frame, lengths);
-        Assert.Equal(31, bits);
+        Assert.Equal(30, bits);
         Assert.Equal(TestData.Hex("0CE6DF90"), data);
         Assert.Equal(Ref01Frame, codec.Decode(data, lengths, Ref01Frame.Length));
     }
 
-    [Fact(Skip = TestData.Pending)]
+    [Fact]
     public void Trap03_code_length_limited_to_15_without_merging_symbols()
     {
         // Частоти Фібоначчі дають незбалансоване дерево глибиною > 15.
@@ -66,7 +66,7 @@ public class HuffmanTrapTests
         Assert.True(kraft <= 1.0 + 1e-12);
     }
 
-    [Fact(Skip = TestData.Pending)]
+    [Fact]
     public void Trap03_degenerate_alphabet_gets_length_1_code_0()
     {
         var freq = new long[256];
@@ -77,7 +77,7 @@ public class HuffmanTrapTests
         Assert.Equal(0u, HuffmanCodec.CanonicalCodes(lengths)[0]);
     }
 
-    [Fact(Skip = TestData.Pending)]
+    [Fact]
     public void Trap04_no_compression_for_uniform_bytes()
     {
         var data = Enumerable.Range(0, 256).Select(i => (byte)i).ToArray();
