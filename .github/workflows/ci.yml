@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: channel.py не змінено
+        run: echo "de402889efab937fc594448ce1c72523b7fbec9daf1ef87770468ee46234e734  channel/channel.py" | sha256sum -c -
+
+      - name: Restore
+        run: dotnet restore Telemetry.sln
+
+      - name: Build (Roslyn-аналізатори, попередження = помилки)
+        run: dotnet build Telemetry.sln --no-restore -c Release
+
+      - name: Format
+        run: dotnet format Telemetry.sln --verify-no-changes --no-restore
+
+      - name: Test + покриття (поріг 80 % рядків)
+        run: >
+          dotnet test Telemetry.sln --no-build -c Release
+          /p:CollectCoverage=true
+          /p:CoverletOutputFormat=cobertura
+          /p:Threshold=80 /p:ThresholdType=line /p:ThresholdStat=total
+
+      - name: Звіт покриття
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: tests/Telemetry.Tests/coverage.cobertura.xml
+          if-no-files-found: ignore

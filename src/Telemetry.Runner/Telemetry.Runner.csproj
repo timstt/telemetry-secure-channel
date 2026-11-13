@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Telemetry.System\Telemetry.System.csproj" />
+    <ProjectReference Include="..\Telemetry.Optimize\Telemetry.Optimize.csproj" />
+  </ItemGroup>
+
+</Project>

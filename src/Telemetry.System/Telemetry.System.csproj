@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Telemetry.System</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Telemetry.Core\Telemetry.Core.csproj" />
+    <ProjectReference Include="..\Telemetry.Huffman\Telemetry.Huffman.csproj" />
+    <ProjectReference Include="..\Telemetry.Predict\Telemetry.Predict.csproj" />
+    <ProjectReference Include="..\Telemetry.Security\Telemetry.Security.csproj" />
+    <ProjectReference Include="..\Telemetry.Packet\Telemetry.Packet.csproj" />
+    <ProjectReference Include="..\Telemetry.Packing\Telemetry.Packing.csproj" />
+  </ItemGroup>
+
+</Project>
