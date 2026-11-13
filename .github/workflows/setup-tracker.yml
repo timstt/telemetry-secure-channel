@@ -1,0 +1,41 @@
+name: Налаштування трекера
+
+# Ручний запуск (Actions → «Налаштування трекера» → Run workflow).
+# Ідемпотентно створює мітки і milestones для трекера задач (критерій B2).
+on:
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Мітки
+        run: |
+          label() { gh label create "$1" --color "$2" --description "$3" --force; }
+          label "zone:greedy"      "1f77b4" "Саша: BitIO, Гаффман, NO_COMPRESSION, жадібний рюкзак"
+          label "zone:predict"     "2ca02c" "Ваня: Frame, перцептрон, ознаки, класифікатор"
+          label "zone:secure"      "d62728" "Коля: KDF, CTR, HMAC, формат пакета, приймач"
+          label "zone:dp-ga"       "9467bd" "Георгій: ДП-рюкзак, ГА, випадковий пошук"
+          label "zone:integration" "ff7f0e" "Тимофій: Sender, Scheduler, Metric, ChannelBridge, Runner, CI"
+          label "checkpoint-1"     "c5def5" "Чекпоінт 1 (тиж. 4): потік, Гаффман, базове Q, еталонні пакети"
+          label "checkpoint-2"     "bfd4f2" "Чекпоінт 2 (тиж. 8): ДП проти жадібності, macro-F1"
+          label "checkpoint-3"     "a2c4ee" "Чекпоінт 3 (тиж. 11): ГА проти випадкового пошуку, таблиці звіту"
+          label "review-feedback"  "fbca04" "Зауваження з чекпоінта (критерій A3)"
+
+      - name: Milestones
+        run: |
+          ms() {
+            if ! gh api "repos/$GH_REPO/milestones?state=all" --jq '.[].title' | grep -qxF "$1"; then
+              gh api "repos/$GH_REPO/milestones" -f title="$1" -f description="$2" >/dev/null
+            fi
+          }
+          ms "Чекпоінт 1" "Тиждень 4: потік проходить, дані відновлюються точно, базове Q виміряно, еталонні пакети читаються"
+          ms "Чекпоінт 2" "Тиждень 8: таблиця «ДП проти жадібності», macro-F1 класифікатора"
+          ms "Чекпоінт 3" "Тиждень 11: порівняння ГА з випадковим пошуком, повний набір таблиць звіту"
+          gh api "repos/$GH_REPO/milestones?state=all" --jq '.[] | "\(.number) \(.title)"'
