@@ -1,0 +1,6 @@
+* text=auto eol=lf
+*.bin binary
+*.docx binary
+# Еталонні матеріали викладача — не змінювати переведенням рядків
+channel/channel.py -text
+data/** -text

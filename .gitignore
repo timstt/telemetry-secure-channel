@@ -1,0 +1,20 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.idea/
+TestResults/
+coverage*.json
+coverage*.xml
+*.cobertura.xml
+
+# Python
+__pycache__/
+*.pyc
+
+# Результати прогонів (таблиці звіту генеруються з них; журнал ГА комітиться окремо в results/ga/)
+out/
+logs/
+*.tmp
