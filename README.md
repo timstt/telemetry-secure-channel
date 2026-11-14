@@ -14,8 +14,8 @@
 
 Мета — максимізувати метрику `Q = 0.5·S + 0.35·R + 0.15·T`: менше біт, більше доставлених критичних кадрів, швидка робота.
 
-> **Статус:** каркас змерджено. Контракти, заглушки, тести-пастки й CI на місці; реалізації зон — у PR учасників.
-> Тести зон поки позначені `Skip` і вмикаються власниками.
+> **Статус:** усі зони реалізовано, усі 12 приймальних кейсів C1 і тести-пастки зелені (0 `Skip`), покриття ≈ 99 %.
+> Повний прогін 3 сценарії × 5 seed через незмінений `channel.py` триває ≈ 3 с із 120 с.
 
 ---
 
@@ -28,7 +28,7 @@ git clone https://github.com/timstt/telemetry-secure-channel && cd telemetry-sec
 dotnet test
 ```
 
-Повний прогін (після інтеграції модулів): 3 сценарії × 5 seed, лог і результати в `out/`.
+Повний прогін: 3 сценарії × 5 seed, лог і результати в `out/`.
 
 ```bash
 dotnet run --project src/Telemetry.Runner
@@ -38,8 +38,7 @@ dotnet run --project src/Telemetry.Runner -- --seeds 1,2,3,4,5 --scenarios ав�
 Seed за замовчуванням: відкритий `425243` і чотири похідні (`425244…425247`). Результати пишуться атомарно
 (`*.tmp` + заміна): `out/results.json`, `out/results.csv`, `out/recovered/<сценарій>_<seed>.csv`; журнал з усіма
 винятками і без пароля: `out/runner.log`. Код виходу: 0 — усі прогони завершено в ліміті, 1 — є незавершені,
-2 — помилка аргументів чи конфігурації, 3 — перевищено ліміт часу. Поки зони Sender/Receiver/Frame — заглушки,
-прогони завершуються статусом `Failed` з `NotImplementedException` у журналі; це очікувано.
+2 — помилка аргументів чи конфігурації, 3 — перевищено ліміт часу.
 
 Ті самі перевірки, що в CI (запускати перед кожним PR):
 
@@ -52,9 +51,14 @@ dotnet test /p:CollectCoverage=true /p:Threshold=80 /p:ThresholdType=line /p:Thr
 Інструменти:
 
 ```bash
-dotnet run --project tools/Telemetry.Tools -- check-ref   # усі ref_* приймаються, bad_* дають очікуваний код
-dotnet run --project tools/Telemetry.Tools -- measure-q   # Q за сценаріями і seed
-dotnet run --project tools/Telemetry.Tools -- report      # 5 таблиць звіту з реальних прогонів
+dotnet run --project tools/Telemetry.Tools -- check-ref              # усі ref_* приймаються, bad_* дають очікуваний код
+dotnet run --project tools/Telemetry.Tools -- measure-q              # таблиця 4: S, R, Q за сценаріями (5 seed)
+dotnet run --project tools/Telemetry.Tools -- measure-q --ablation   # таблиця 2: Q з вимкненим по черзі кожним блоком
+dotnet run --project tools/Telemetry.Tools -- optimize               # таблиця 5: ГА проти випадкового пошуку → results/ga/
+dotnet run --project tools/Telemetry.Tools -- train-classifier       # навчання перцептрона → src/Telemetry.Predict/classifier.json
+dotnet run --project tools/Telemetry.Tools -- attack tamper          # атака на цілісність: зміна байтів еталонних пакетів
+dotnet run --project tools/Telemetry.Tools -- attack vigenere шифр.txt корпус.txt   # ГА проти слабкого шифру (тиждень 12)
+dotnet run --project tools/Telemetry.Tools -- report                 # таблиці 1 і 3 з реальних даних
 ```
 
 ---
@@ -111,8 +115,10 @@ Bridge/Sender/Metric/Scheduler → тонкий зріз без стисненн
 | `src/Telemetry.Packing` | рюкзак 0/1 динамічним програмуванням |
 | `src/Telemetry.Optimize` | генетичний алгоритм, випадковий пошук |
 | `src/Telemetry.System` | планувальник, передавач, метрика, міст до каналу |
+| `src/Telemetry.Attack` | модуль атаки: ГА проти Віженера, підстановки, XOR; атака на цілісність |
 | `src/Telemetry.Runner` | консольний прогін сценаріїв |
-| `tools/Telemetry.Tools` | `check-ref`, `measure-q`, `report` |
+| `tools/Telemetry.Tools` | `check-ref`, `measure-q`, `optimize`, `train-classifier`, `attack`, `report` |
+| `results/ga/` | журнали ГА і випадкового пошуку (таблиця 5) |
 | `tests/Telemetry.Tests` | xUnit: тека на зону, `Integration/`, `Acceptance/C1_Case01..12` |
 | `channel/` | `channel.py` від викладача, `bridge.py` (міст stdin/stdout для C#) |
 | `data/` | матеріали викладача |
@@ -152,6 +158,36 @@ S = B_ref / (B_ref + B_sent)     R = частка відновлених кри�
 - `t` — час обчислень системи на повний прогін. Час каналу (`stats()["час_каналу_с"]`) у `t` не входить і
   наводиться у звіті окремо.
 - Приймач аварійно завершився або `R = 0` → `Q = 0`.
+
+## Командне розширення DUPLICATION (flags 0x02)
+
+FORMAT_SPEC §3.1.1 дозволяє командні розширення, якщо команда описує їхній формат. Наш формат:
+
+- Передавач після всіх звичайних пакетів додає пакети-дублі: кожен критичний кадр сеансу передається ще раз.
+  Дублі — окремі пакети режиму NO_COMPRESSION (`flags = 0x0A`: DUPLICATION | NO_COMPRESSION), до 35 кадрів у пакеті,
+  з власними `packet_seq`. Решта полів навантаження — рівно базовий формат §3: `table_nsym = 0`,
+  `symbol_count = bitstream_len = 12 · frame_count`, у `bitstream` — сирі 12-байтові кадри.
+- Прапорець стоїть **лише** на пакетах-дублях. Звичайні пакети лишаються базовим форматом (`flags & 0x03 == 0`), тож
+  приймач іншої команди читає їх і відкидає тільки дублі з `E_PAYLOAD`, як вимагає §3.1.1 (кейс 18).
+- Наш приймач з цим розширенням зараховує однакові кадри один раз (кадр однозначно ідентифікує `timestamp_ms` разом
+  з рештою полів). Пакети з `PREDICTION = 1` він відхиляє з `E_PAYLOAD`: прогноз не реалізовано.
+- Навіщо: без дублювання втрата одного пакета з ~35 критичними кадрами в робочому сценарії дає `1 − R ≈ 0,12`
+  (C1 №4 вимагає ≤ 0,05 на кожному seed). З дублюванням на 30 seed робочого сценарію `R = 1`. Ціна — ≈ 4 000 Б
+  (у спокійному S падає з ≈ 0,471 до ≈ 0,444), але в аварійному R зростає з ≈ 0,85 до ≈ 0,98, і середнє Q
+  за трьома сценаріями зростає з 0,7323 до 0,7431 (таблиця 2, `measure-q --ablation`).
+
+## Результати (5 seed, `measure-q`)
+
+| Сценарій | S | R | R мін. | Q |
+|---|---:|---:|---:|---:|
+| спокійний | 0.4444 | 1.0000 | 1.0000 | 0.7216 |
+| робочий | 0.4444 | 1.0000 | 1.0000 | 0.7214 |
+| аварійний | 0.5896 | 0.9767 | 0.8833 | 0.7861 |
+
+Перцептрон: macro-F1 = 0,89 на `valid.csv` (поріг 0,58), матриця помилок — `dotnet run --project tools/Telemetry.Tools -- train-classifier`.
+Параметри передавача за замовчуванням (вікно Гаффмана 37, поріг ентропії 8,0, вага пріоритету 2,728) — найкраща
+особина ГА, `results/ga/summary.md`. Класифікатор майже не змінює Q (таблиця 2): R рахується лише за `critical`, а
+класи впливають тільки на те, які некритичні кадри підуть раніше.
 
 ## Спостереження, які чесно покажемо у звіті
 
