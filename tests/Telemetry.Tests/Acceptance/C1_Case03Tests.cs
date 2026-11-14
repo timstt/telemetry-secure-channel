@@ -1,4 +1,4 @@
-using Telemetry.Tests.Infrastructure;
+using Telemetry.System;
 
 namespace Telemetry.Tests.Acceptance;
 
@@ -8,6 +8,16 @@ namespace Telemetry.Tests.Acceptance;
 /// </summary>
 public class C1_Case03Tests
 {
-    [Fact(Skip = TestData.Pending)]
-    public void Case03() => Assert.Fail("Реалізувати після інтеграції модулів: session.csv, сценарій «спокійний», 5 seed: множина відновлених кадрів == вхідна, побайтово.");
+    [Fact]
+    public void Case03_calm_scenario_recovers_every_frame_on_every_seed()
+    {
+        var runs = FullRun.Runs("спокійний").ToList();
+        Assert.Equal(5, runs.Count);
+        Assert.All(runs, r =>
+        {
+            Assert.Equal(RunStatus.Ok, r.Status);
+            Assert.True(r.AllFramesRecovered, $"seed {r.Seed}: відновлено {r.RecoveredFrames} з {r.Frames}");
+            Assert.Equal(3000, r.RecoveredFrames);
+        });
+    }
 }
