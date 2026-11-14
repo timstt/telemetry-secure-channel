@@ -7,7 +7,7 @@ namespace Telemetry.Tests.Predict;
 /// <summary>Frame (C2 п.1) і класифікатор (C1 №9) — зона Вані.</summary>
 public class PredictTrapTests
 {
-    [Fact(Skip = TestData.Pending)]
+    [Fact]
     public void Frame_roundtrip_big_endian_ref01()
     {
         var bytes = TestData.Hex("00000000 03E8 00D7 FFFD 01 01");
@@ -18,7 +18,7 @@ public class PredictTrapTests
         Assert.Equal(bytes, back);
     }
 
-    [Theory(Skip = TestData.Pending)]
+    [Theory]
     [InlineData("1,2,3,4,8,0")]   // mode поза 0..7
     [InlineData("1,2,3,4,1,2")]   // critical не 0/1
     [InlineData("1,,3,4,1,0")]    // пропуск
