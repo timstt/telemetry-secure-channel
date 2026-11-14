@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Захищений канал телеметрії</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,.10); --wash: rgba(11,11,11,.04);
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --seq: #256abf; --neg: #e34948;
+  --good: #006300; --crit: #d03b3b; --warn-bg: #fdf1d6; --warn-ink: #5b4200;
+  --on-fill: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,.10); --wash: rgba(255,255,255,.05);
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --seq: #3987e5; --neg: #e66767;
+    --good: #0ca30c; --crit: #e66767; --warn-bg: #3a2e0c; --warn-ink: #f3d98b;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,.10); --wash: rgba(255,255,255,.05);
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --seq: #3987e5; --neg: #e66767;
+  --good: #0ca30c; --crit: #e66767; --warn-bg: #3a2e0c; --warn-ink: #f3d98b;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 84px; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+header.top { position: sticky; top: 0; z-index: 20; background: var(--page); border-bottom: 1px solid var(--grid); }
+.bar { display: flex; align-items: center; gap: 12px; padding-block: 10px; flex-wrap: wrap; }
+nav { display: flex; gap: 2px; flex-wrap: wrap; flex: 1; }
+nav a { color: var(--ink2); text-decoration: none; padding: 5px 10px; border-radius: 8px; font-size: 13.5px; }
+nav a b { font-weight: 600; color: var(--ink); }
+nav a:hover { background: var(--wash); }
+nav a.on { background: var(--wash); color: var(--ink); box-shadow: inset 0 -2px 0 var(--s1); }
+.tools { display: flex; gap: 8px; align-items: center; }
+button { font: inherit; cursor: pointer; border-radius: 9px; border: 1px solid var(--axis); background: var(--surface); color: var(--ink); padding: 6px 12px; }
+button:hover { background: var(--wash); }
+button:focus-visible, a:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+button.primary { background: var(--s1); border-color: var(--s1); color: #fff; font-weight: 600; }
+button.primary:hover { filter: brightness(1.08); }
+button:disabled { opacity: .6; cursor: progress; }
+.chip { font-size: 12.5px; color: var(--ink2); padding: 3px 9px; border-radius: 999px; border: 1px solid var(--grid); background: var(--surface); white-space: nowrap; }
+.banner { margin: 12px 0 0; padding: 10px 14px; border-radius: 10px; background: var(--warn-bg); color: var(--warn-ink); font-size: 14px; display: none; }
+.banner.show { display: block; }
+section.sec { padding: 40px 0 8px; }
+.sechead { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+.sechead .no { color: var(--muted); font-size: 13px; font-weight: 600; }
+h1 { font-size: 30px; margin: 28px 0 6px; letter-spacing: -.02em; }
+h2 { font-size: 22px; margin: 0; letter-spacing: -.01em; }
+h3 { font-size: 15px; margin: 0 0 2px; }
+.owner { font-size: 12.5px; padding: 2px 10px; border-radius: 999px; background: var(--wash); color: var(--ink2); border: 1px solid var(--grid); }
+.lead { color: var(--ink2); margin: 2px 0 16px; max-width: 78ch; }
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+.grid.wide { grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; min-width: 0; }
+.card .sub { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+.tiles { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); margin: 14px 0; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; }
+.tile .k { color: var(--ink2); font-size: 13px; }
+.tile .v { font-size: 30px; font-weight: 650; letter-spacing: -.02em; line-height: 1.15; margin-top: 2px; }
+.tile .d { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+.ok { color: var(--good); font-weight: 600; }
+.bad { color: var(--crit); font-weight: 600; }
+.pipe { display: flex; gap: 0; flex-wrap: wrap; margin: 6px 0 4px; }
+.step { flex: 1 1 130px; min-width: 120px; position: relative; padding: 10px 12px; border: 1px solid var(--border); background: var(--surface); margin: 0 -1px -1px 0; text-decoration: none; color: inherit; }
+.step:first-child { border-radius: 12px 0 0 12px; }
+.step:last-child { border-radius: 0 12px 12px 0; }
+.step:hover { background: var(--wash); }
+.step .n { font-size: 11.5px; color: var(--muted); font-weight: 600; }
+.step .t { font-weight: 600; font-size: 14px; }
+.step .w { font-size: 12.5px; color: var(--ink2); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+table.compact { width: auto; min-width: 60%; }
+.tw { overflow-x: auto; max-width: 100%; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+th { color: var(--ink2); font-weight: 600; font-size: 12.5px; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+code, .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+.rows { display: grid; gap: 8px; }
+.hrow { display: grid; grid-template-columns: minmax(120px, 34%) 1fr; gap: 10px; align-items: center; }
+.hrow .lab { font-size: 13.5px; color: var(--ink); }
+.hrow .lab small { display: block; color: var(--muted); font-size: 12px; }
+.track { position: relative; height: 26px; }
+.track .grid-line { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--grid); }
+.track .zero { position: absolute; top: -2px; bottom: -2px; width: 1px; background: var(--axis); }
+.track .ref { position: absolute; top: -4px; bottom: -4px; width: 0; border-left: 2px dashed var(--muted); }
+.track .refl { position: absolute; top: -18px; font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+.bar1 { position: absolute; top: 3px; bottom: 3px; border-radius: 4px; min-width: 2px; }
+.bar1.pos { border-radius: 0 4px 4px 0; }
+.bar1.neg { border-radius: 4px 0 0 4px; }
+.val { position: absolute; top: 3px; line-height: 20px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stack { display: flex; gap: 2px; height: 26px; width: 100%; }
+.seg { border-radius: 4px; color: var(--on-fill); font-size: 12px; line-height: 26px; padding: 0 6px; overflow: hidden; white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 0; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 0 0 10px; font-size: 13px; color: var(--ink2); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.hm td { text-align: center; font-variant-numeric: tabular-nums; border: 2px solid var(--surface); border-radius: 6px; padding: 10px 6px; }
+.hm th { text-align: center; }
+.hm td.lab { text-align: left; background: none; border: none; color: var(--ink2); font-size: 13px; }
+.strip { display: flex; gap: 2px; height: 40px; margin: 6px 0 12px; }
+.strip .b { border-radius: 4px; min-width: 6px; opacity: .92; transition: opacity .1s; }
+.strip .b:hover, .strip .b:focus-visible { opacity: 1; filter: brightness(1.12); }
+details.say { margin-top: 12px; background: var(--wash); border-radius: 10px; padding: 8px 12px; }
+details.say summary { cursor: pointer; font-weight: 600; color: var(--ink2); font-size: 13.5px; }
+details.say ul { margin: 8px 0 2px; padding-left: 18px; color: var(--ink2); }
+details.say li { margin: 3px 0; }
+details.extras { border: 1px solid var(--grid); border-radius: 10px; background: var(--surface); padding: 10px 14px; }
+details.extras summary { cursor: pointer; font-weight: 650; }
+details.extras .card { margin-top: 12px; }
+.ref-flow { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; }
+.ref-flow span { flex: 1 1 108px; border: 1px solid var(--grid); background: var(--page); padding: 8px 10px; border-radius: 9px; }
+.ref-flow b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+.mini { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); margin: 6px 0 12px; }
+.item { border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; background: var(--page); font-size: 13px; }
+.item.pick { box-shadow: inset 0 0 0 2px var(--s1); }
+.item.pick2 { box-shadow: inset 0 0 0 2px var(--s2); }
+.hint { color: var(--muted); font-size: 12.5px; margin-top: 8px; }
+.tip { position: fixed; z-index: 50; pointer-events: none; background: var(--ink); color: var(--page); padding: 6px 9px; border-radius: 8px; font-size: 12.5px; max-width: 280px; display: none; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
+svg text { font-family: inherit; }
+.sk { color: var(--muted); }
+footer { padding: 30px 0 60px; color: var(--muted); font-size: 13px; }
+.unavailable { color: var(--ink2); background: var(--wash); border-radius: 10px; padding: 12px 14px; font-size: 14px; }
+@media (max-width: 640px) {
+  .hrow { grid-template-columns: 1fr; gap: 4px; }
+  .rows.hasrefs .hrow:first-child .track { margin-top: 18px; }
+  .bar { gap: 8px; }
+  nav { flex: 1 1 100%; flex-wrap: nowrap; overflow-x: auto; }
+  nav a { white-space: nowrap; }
+  .tools { width: 100%; justify-content: space-between; }
+  .chip { font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; max-width: 46%; }
+  button { padding: 5px 10px; }
+  .step { flex-basis: 45%; }
+  h1 { font-size: 24px; }
+  .hm th { font-size: 11px; padding: 4px 2px; }
+  .hm td { padding: 8px 2px; }
+  .hm td.lab { font-size: 12px; padding-right: 4px; }
+  .card { padding: 12px; }
+  th, td { padding: 5px 5px; }
+}
+@media print { header.top, .tools { display: none; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap bar">
+    <nav id="nav">
+      <a href="#overview"><b>Огляд</b></a>
+      <a href="#predict"><b>1</b> Прогноз</a>
+      <a href="#compress"><b>2</b> Стиснення</a>
+      <a href="#pack"><b>3</b> Пакування</a>
+      <a href="#system"><b>4</b> Система</a>
+      <a href="#secure"><b>5</b> Захист</a>
+    </nav>
+    <div class="tools">
+      <span class="chip" id="source">завантаження…</span>
+      <button class="primary" id="run" type="button">Запустити прогін</button>
+      <button id="theme" type="button" aria-label="Перемкнути тему">Тема</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="banner" id="banner" role="status"></div>
+
+  <section id="overview" class="sec">
+    <h1>Захищений канал телеметрії з обмеженою пропускною здатністю</h1>
+    <p class="lead">Апарат передає телеметрію вузьким каналом із втратами, який прослуховують. Мета — найвище <b>Q = 0.5·S + 0.35·R + 0.15·T</b>: менше відправлених бітів, більше доставлених критичних кадрів, швидка робота. Розділи відповідають крокам обробки кадру.</p>
+    <div class="pipe" id="pipe"></div>
+    <div class="tiles" id="hero"></div>
+    <div id="heroNote" class="hint"></div>
+  </section>
+
+  <section id="predict" class="sec">
+    <div class="sechead"><span class="no">1</span><h2>Прогноз: клас кожного кадру</h2><span class="owner">Ваня · перцептрон</span></div>
+    <p class="lead">Перцептрон 16→32→16→3 дивиться на кадр і на історію з 8 попередніх, і визначає клас: норма, аномалія чи перехідний режим. Від класу залежить цінність кадру для рюкзака.</p>
+    <div class="grid wide" id="predictBody"></div>
+  </section>
+
+  <section id="compress" class="sec">
+    <div class="sechead"><span class="no">2</span><h2>Стиснення: канонічний Гаффман</h2><span class="owner">Саша · жадібні алгоритми</span></div>
+    <p class="lead">Жадібне дерево Гаффмана дає довжини кодів (не більше 15 біт), а самі коди відновлюються канонічно, тому дерево передавати не треба. Нижче — еталон викладача й окреме вікно справжнього сеансу.</p>
+    <div id="compressTiles" class="tiles"></div>
+    <div class="grid wide" id="compressBody"></div>
+  </section>
+
+  <section id="pack" class="sec">
+    <div class="sechead"><span class="no">3</span><h2>Пакування: рюкзак і генетичний алгоритм</h2><span class="owner">Георгій · ДП і ГА</span></div>
+    <p class="lead">Пакет вміщує не більше 437 байтів навантаження. Рюкзак 0/1 вибирає кадри з найбільшою сумарною цінністю, а генетичний алгоритм підбирає параметри передавача.</p>
+    <div id="packTiles" class="tiles"></div>
+    <div class="grid wide" id="packBody"></div>
+  </section>
+
+  <section id="system" class="sec">
+    <div class="sechead"><span class="no">4</span><h2>Система: черга, канал і підсумкове Q</h2><span class="owner">Тимофій · інтеграція</span></div>
+    <p class="lead">Жадібна черга відправлення, три сценарії каналу й п'ять seed на кожен. Кнопка «Запустити прогін» виконує повний прохід системи через справжній канал.</p>
+    <div class="grid wide" id="systemBody"></div>
+  </section>
+
+  <section id="secure" class="sec">
+    <div class="sechead"><span class="no">5</span><h2>Захист і приймач</h2><span class="owner">Коля · AES-CTR, HMAC</span></div>
+    <p class="lead">Шифрування AES-256-CTR, потім HMAC-SHA256 над заголовком і шифротекстом (Encrypt-then-MAC). Приймач спершу перевіряє тег у постійний час і лише потім розшифровує.</p>
+    <div class="grid wide" id="secureBody"></div>
+  </section>
+
+  <footer>
+    Команда T01 · C# / .NET 8 · Захищений канал телеметрії
+    <span id="pre"></span>
+  </footer>
+</main>
+<div class="tip" id="tip"></div>
+
+<script>
+'use strict';
+const NS = 'http://www.w3.org/2000/svg';
+const $ = (s, r = document) => r.querySelector(s);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const f = (x, d = 3) => Number(x).toFixed(d);
+
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v === false || v == null) continue;
+    if (k === 'class') e.className = v;
+    else if (k === 'style' && typeof v === 'object') Object.assign(e.style, v);
+    else e.setAttribute(k, v);
+  }
+  for (const kid of kids.flat()) { if (kid == null || kid === false) continue; e.append(kid.nodeType ? kid : document.createTextNode(String(kid))); }
+  return e;
+}
+function sv(tag, attrs = {}, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+
+/* ---------- підказка при наведенні ---------- */
+const tipEl = $('#tip');
+function tip(node, text) {
+  const show = (x, y) => {
+    tipEl.textContent = typeof text === 'function' ? text() : text;
+    tipEl.style.display = 'block';
+    const w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+    tipEl.style.left = Math.min(window.innerWidth - w - 8, Math.max(8, x + 12)) + 'px';
+    tipEl.style.top = Math.min(window.innerHeight - h - 8, y + 14) + 'px';
+  };
+  node.addEventListener('mousemove', e => show(e.clientX, e.clientY));
+  node.addEventListener('mouseleave', () => { tipEl.style.display = 'none'; });
+  node.addEventListener('focus', () => { const r = node.getBoundingClientRect(); show(r.left + r.width / 2, r.top); });
+  node.addEventListener('blur', () => { tipEl.style.display = 'none'; });
+  if (!node.hasAttribute('tabindex')) node.setAttribute('tabindex', '0');
+  return node;
+}
+
+/* ---------- будівельні блоки ---------- */
+function card(title, sub, ...body) {
+  return el('div', { class: 'card' }, el('h3', {}, title), sub ? el('p', { class: 'sub' }, sub) : null, ...body);
+}
+function tile(k, v, d, cls, extra) { return el('div', { class: 'tile' }, el('div', { class: 'k' }, k), el('div', { class: 'v ' + (cls || '') }, v), d ? el('div', { class: 'd' }, d) : null, extra); }
+function legend(items) { return el('div', { class: 'legend' }, items.map(i => el('span', {}, el('i', { style: { background: i.color } }), i.name))); }
+function say(...lines) { return el('details', { class: 'say' }, el('summary', {}, 'Пояснення'), el('ul', {}, lines.map(l => el('li', {}, l)))); }
+function unavailable(name, err) { return el('div', { class: 'card' }, el('div', { class: 'unavailable' }, `Розділ «${name}» тимчасово недоступний: ${err}. Решта сторінки працює.`)); }
+function fill(id, builder, name, section) {
+  const host = $('#' + id);
+  host.replaceChildren();
+  try {
+    if (!section || !section.ok) throw new Error(section ? section.error : 'немає даних');
+    host.append(...[].concat(builder(section.data)).filter(Boolean));
+  } catch (e) { host.append(unavailable(name, e.message)); }
+}
+
+/* горизонтальні стовпчики (HTML): rows = [{label, sub, value, color, text, tip}] */
+function hbars(rows, o) {
+  const min = o.min ?? 0, max = o.max, span = max - min;
+  const pct = v => ((v - min) / span) * 100;
+  const wrap = el('div', { class: 'rows' });
+  for (const r of rows) {
+    const track = el('div', { class: 'track' });
+    for (const t of o.ticks || []) track.append(el('div', { class: 'grid-line', style: { left: pct(t) + '%' } }));
+    if (min < 0) track.append(el('div', { class: 'zero', style: { left: pct(0) + '%' } }));
+    (o.refs || []).forEach((rf, idx) => {
+      track.append(el('div', { class: 'ref', style: { left: pct(rf.v) + '%' } }));
+      if (r === rows[0]) track.append(el('div', { class: 'refl', style: { left: pct(rf.v) + '%', transform: idx % 2 === 0 ? 'translateX(-100%)' : 'none', padding: idx % 2 === 0 ? '0 6px 0 0' : '0 0 0 6px' } }, rf.label));
+    });
+    const a = Math.min(pct(Math.max(r.value, min)), pct(Math.max(0, min))), b = Math.max(pct(r.value), pct(Math.max(0, min)));
+    const neg = r.value < 0;
+    const bar = el('div', { class: 'bar1 ' + (neg ? 'neg' : 'pos'), style: { left: (neg ? pct(r.value) : pct(Math.max(0, min))) + '%', width: Math.abs(pct(r.value) - pct(Math.max(0, min))) + '%', background: r.color || 'var(--s1)' } });
+    tip(bar, r.tip || `${r.label}: ${r.text}`);
+    track.append(bar);
+    const atRight = neg ? pct(r.value) : Math.max(a, b);
+    const inside = !neg && pct(r.value) > 80;
+    const lbl = el('div', { class: 'val', style: neg ? { right: (100 - pct(r.value) + 1) + '%' } : inside ? { right: (100 - pct(r.value)) + '%', paddingRight: '8px', color: 'var(--on-fill)' } : { left: `calc(${atRight}% + 6px)` } }, r.text);
+    track.append(lbl);
+    wrap.append(el('div', { class: 'hrow' }, el('div', { class: 'lab' }, r.label, r.sub ? el('small', {}, r.sub) : null), track));
+  }
+  if (o.refs && o.refs.length) { wrap.style.paddingTop = '14px'; wrap.classList.add('hasrefs'); }
+  return wrap;
+}
+
+/* складені горизонтальні смуги: rows=[{label, parts:[v...]}], series=[{name,color}] */
+function stacked(rows, series, o = {}) {
+  const max = o.max || Math.max(...rows.map(r => r.parts.reduce((a, b) => a + b, 0)));
+  const wrap = el('div', { class: 'rows' });
+  for (const r of rows) {
+    const st = el('div', { class: 'stack', style: { width: (r.parts.reduce((a, b) => a + b, 0) / max * 100) + '%' } });
+    r.parts.forEach((v, i) => {
+      if (v <= 0) return;
+      const seg = el('div', { class: 'seg', style: { flex: `${v} 1 0`, background: series[i].color } }, (v / max > (o.minLabel || 0.07)) ? (o.fmt ? o.fmt(v) : String(v)) : '');
+      tip(seg, `${r.label} · ${series[i].name}: ${o.fmt ? o.fmt(v) : v}`);
+      st.append(seg);
+    });
+    wrap.append(el('div', { class: 'hrow' }, el('div', { class: 'lab' }, r.label, r.sub ? el('small', {}, r.sub) : null), el('div', {}, st)));
+  }
+  return wrap;
+}
+
+/* вертикальна гістограма (SVG) */
+function vbars(data, o) {
+  const W = 560, H = 220, l = 34, r = 8, t = 16, b = 30;
+  const svg = sv('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', role: 'img', 'aria-label': o.aria });
+  const raw = Math.max(...data.map(d => d.y), 1), pw = 10 ** Math.floor(Math.log10(raw / 4)), m = raw / 4 / pw, stepN = (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * pw;
+  const max = Math.ceil(raw / stepN) * stepN, n = data.length, bw = (W - l - r) / n;
+  const y = v => t + (H - t - b) * (1 - v / max);
+  for (let v = 0; v <= max + 1e-9; v += stepN) {
+    sv('line', { x1: l, x2: W - r, y1: y(v), y2: y(v), style: 'stroke:var(--grid)' }, svg);
+    const tx = sv('text', { x: l - 6, y: y(v) + 4, 'text-anchor': 'end', style: 'fill:var(--muted);font-size:11px' }, svg); tx.textContent = Math.round(v);
+  }
+  data.forEach((d, i) => {
+    const x = l + i * bw + bw * .15, w = bw * .7;
+    if (d.y > 0) {
+      const rect = sv('rect', { x, y: y(d.y), width: w, height: y(0) - y(d.y), rx: 4, tabindex: 0, style: 'fill:var(--s1)' }, svg);
+      tip(rect, `${o.xlabel} ${d.x}: ${d.y}`);
+      const tv = sv('text', { x: x + w / 2, y: y(d.y) - 4, 'text-anchor': 'middle', style: 'fill:var(--ink2);font-size:11px' }, svg); tv.textContent = d.y;
+    }
+    const tl = sv('text', { x: x + w / 2, y: H - b + 15, 'text-anchor': 'middle', style: 'fill:var(--muted);font-size:11px' }, svg); tl.textContent = d.x;
+  });
+  sv('line', { x1: l, x2: W - r, y1: y(0), y2: y(0), style: 'stroke:var(--axis)' }, svg);
+  const cap = sv('text', { x: W / 2, y: H - 2, 'text-anchor': 'middle', style: 'fill:var(--muted);font-size:11px' }, svg); cap.textContent = o.caption;
+  return svg;
+}
+
+/* лінійний графік (SVG) з підказкою-перехрестям */
+function lines(series, o) {
+  const W = 600, H = 270, l = 50, r = 96, t = 14, b = 32;
+  const svg = sv('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', role: 'img', 'aria-label': o.aria });
+  const xs = series[0].pts.map(p => p.x);
+  const all = series.flatMap(s => s.pts.map(p => p.y)).concat(o.ref ? [o.ref.v] : []);
+  let lo = Math.min(...all), hi = Math.max(...all); const pad = (hi - lo) * .12 || .01; lo -= pad; hi += pad;
+  const x = v => l + (v - xs[0]) / (xs[xs.length - 1] - xs[0]) * (W - l - r);
+  const y = v => t + (H - t - b) * (1 - (v - lo) / (hi - lo));
+  for (let i = 0; i <= 4; i++) {
+    const v = lo + (hi - lo) * i / 4;
+    sv('line', { x1: l, x2: W - r, y1: y(v), y2: y(v), style: 'stroke:var(--grid)' }, svg);
+    const tx = sv('text', { x: l - 6, y: y(v) + 4, 'text-anchor': 'end', style: 'fill:var(--muted);font-size:11px' }, svg); tx.textContent = v.toFixed(3);
+  }
+  xs.forEach(v => { if (v % 2 === 0) { const tx = sv('text', { x: x(v), y: H - b + 16, 'text-anchor': 'middle', style: 'fill:var(--muted);font-size:11px' }, svg); tx.textContent = v; } });
+  const cap = sv('text', { x: (l + W - r) / 2, y: H - 2, 'text-anchor': 'middle', style: 'fill:var(--muted);font-size:11px' }, svg); cap.textContent = o.xcaption;
+  if (o.ref) {
+    sv('line', { x1: l, x2: W - r, y1: y(o.ref.v), y2: y(o.ref.v), style: 'stroke:var(--muted);stroke-dasharray:5 4' }, svg);
+    const tx = sv('text', { x: W - r + 6, y: y(o.ref.v) + 4, style: 'fill:var(--muted);font-size:11px' }, svg); tx.textContent = o.ref.label;
+  }
+  const ends = series.map(s => ({ s, y: y(s.pts[s.pts.length - 1].y) })).sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 14) ends[i].y = ends[i - 1].y + 14;
+  for (const s of series) {
+    const d = s.pts.map((p, i) => (i ? 'L' : 'M') + x(p.x).toFixed(1) + ' ' + y(p.y).toFixed(1)).join(' ');
+    sv('path', { d, fill: 'none', 'stroke-width': s.thin ? 1.5 : 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', style: `stroke:${s.color};${s.dash ? 'stroke-dasharray:4 3' : ''}` }, svg);
+    const e = ends.find(q => q.s === s), last = s.pts[s.pts.length - 1];
+    sv('circle', { cx: x(last.x), cy: y(last.y), r: 3.5, style: `fill:${s.color};stroke:var(--surface);stroke-width:2` }, svg);
+    const tx = sv('text', { x: W - r + 6, y: e.y + 4, style: 'fill:var(--ink2);font-size:11.5px' }, svg); tx.textContent = s.name;
+  }
+  const cross = sv('line', { y1: t, y2: H - b, style: 'stroke:var(--axis);display:none' }, svg);
+  const dots = series.map(s => sv('circle', { r: 4, style: `fill:${s.color};stroke:var(--surface);stroke-width:2;display:none` }, svg));
+  const hit = sv('rect', { x: l, y: t, width: W - l - r, height: H - t - b, style: 'fill:transparent', tabindex: 0 }, svg);
+  const at = clientX => {
+    const box = svg.getBoundingClientRect(); const px = (clientX - box.left) / box.width * W;
+    const v = xs.reduce((a, c) => Math.abs(x(c) - px) < Math.abs(x(a) - px) ? c : a, xs[0]); return v;
+  };
+  const show = (v, cx, cy) => {
+    cross.setAttribute('x1', x(v)); cross.setAttribute('x2', x(v)); cross.style.display = '';
+    series.forEach((s, i) => { const p = s.pts.find(q => q.x === v); dots[i].setAttribute('cx', x(v)); dots[i].setAttribute('cy', y(p.y)); dots[i].style.display = ''; });
+    tipEl.textContent = `${o.xname} ${v}\n` + series.map(s => `${s.name}: ${s.pts.find(q => q.x === v).y.toFixed(5)}`).join('\n');
+    tipEl.style.whiteSpace = 'pre'; tipEl.style.display = 'block';
+    tipEl.style.left = Math.min(innerWidth - tipEl.offsetWidth - 8, cx + 12) + 'px'; tipEl.style.top = (cy + 14) + 'px';
+  };
+  hit.addEventListener('mousemove', e => show(at(e.clientX), e.clientX, e.clientY));
+  hit.addEventListener('mouseleave', () => { cross.style.display = 'none'; dots.forEach(d => d.style.display = 'none'); tipEl.style.display = 'none'; tipEl.style.whiteSpace = ''; });
+  return svg;
+}
+
+function table(head, rows, numCols = [], cls = '') {
+  return el('div', { class: 'tw' }, el('table', { class: cls }, el('thead', {}, el('tr', {}, head.map((h, i) => el('th', { class: numCols.includes(i) ? 'num' : '' }, h)))),
+    el('tbody', {}, rows.map(r => el('tr', {}, r.map((c, i) => el('td', { class: numCols.includes(i) ? 'num' : '' }, c)))))));
+}
+const mark = ok => el('span', { class: ok ? 'ok' : 'bad' }, ok ? '✓ збігається' : '✗ не збігається');
+
+/* ---------- стан ---------- */
+let overview = null, state = null;
+const SC = ['спокійний', 'робочий', 'аварійний'];
+
+function perScenario() {
+  if (!state || !state.results) return null;
+  const runs = state.results.Runs.filter(r => r.Status === 'Ok');
+  return state.results.Scenarios.map(s => {
+    const rs = runs.filter(r => r.Scenario === s.Scenario), n = rs.length || 1, avg = g => rs.reduce((a, r) => a + g(r), 0) / n;
+    return {
+      name: s.Scenario, q: s.MeanQ, rMean: s.MeanR, rMin: s.MinR, done: `${s.Completed}/${s.Runs}`,
+      S: avg(r => r.Metric.S), R: avg(r => r.Metric.R), T: avg(r => r.Metric.T),
+      delivered: avg(r => r.PacketsDelivered), lost: avg(r => r.PacketsTransmitted - r.PacketsDelivered), over: avg(r => r.PacketsOverBudget),
+      compute: avg(r => r.ComputeSeconds), bSent: avg(r => r.BSentBits), bRef: avg(r => r.BRefBits)
+    };
+  });
+}
+
+/* ---------- огляд ---------- */
+function renderPipe() {
+  const steps = [['Прогноз', 'Ваня', 'predict', 'клас кадру'], ['Гаффман', 'Саша', 'compress', 'стиснення'], ['Рюкзак (ДП)', 'Георгій', 'pack', 'що в пакет'],
+    ['Жадібна черга', 'Тимофій', 'system', 'порядок'], ['AES-CTR + HMAC', 'Коля', 'secure', 'захист'], ['Канал', 'channel.py', 'system', 'втрати, затримки'], ['Приймач', 'Коля', 'secure', 'перевірка, відновлення']];
+  $('#pipe').replaceChildren(...steps.map((s, i) => el('a', { class: 'step', href: '#' + s[2] }, el('div', { class: 'n' }, i + 1), el('div', { class: 't' }, s[0]), el('div', { class: 'w' }, s[1] + ' · ' + s[3]))));
+}
+function renderHero() {
+  const host = $('#hero'), data = perScenario(), cfg = overview?.config?.ok ? overview.config.data : null;
+  host.replaceChildren();
+  if (!data) { host.append(tile('Результати', '—', 'Натисніть «Запустити прогін».')); return; }
+  for (const d of data) {
+    const thr = cfg?.thresholds?.[d.name];
+    const loss = 1 - d.rMin;
+    const within = thr == null ? null : loss <= thr + 1e-9;
+    host.append(tile(`Q · ${d.name}`, f(d.q, 3), `R ${f(d.rMean, 3)} · мін. ${f(d.rMin, 3)}`, '', thr == null ? null : el('div', { class: 'd' }, el('span', { class: within ? 'ok' : 'bad' }, within ? '✓' : '✗'), ` втрата критичних ${f(loss, 3)}, поріг ${f(thr, 2)}`)));
+  }
+  const ok = data.every(d => d.done.split('/')[0] === d.done.split('/')[1]);
+  $('#heroNote').replaceChildren(el('span', { class: ok ? 'ok' : 'bad' }, ok ? '✓ усі прогони завершено' : '✗ є незавершені прогони'),
+    ` · ${state.results.Seeds.length} seed на сценарій · час прогону ${f(state.results.ElapsedSeconds, 2)} с із ${state.results.TimeLimitSeconds} с`);
+}
+
+/* ---------- 1. Прогноз ---------- */
+function renderPredict() {
+  fill('predictBody', c => {
+    const maxF = 1;
+    const rows = c.seeds.map(s => ({ label: `Ініціалізація ${s.seed}`, sub: `втрата ${f(s.loss, 4)}`, value: s.f1, text: f(s.f1, 4), color: 'var(--s1)' }));
+    const refs = [{ v: c.majority, label: `мажор. клас ${f(c.majority, 2)}` }, { v: c.f1Min, label: `поріг ${f(c.f1Min, 2)}` }];
+    const best = card('macro-F1 за ініціалізаціями', `Обрана модель на valid.csv: ${f(c.f1, 4)}. П'ять різних початкових ваг дають близькі результати.`,
+      hbars(rows, { min: 0, max: 1, ticks: [0, .25, .5, .75, 1], refs }),
+      say('Одна ініціалізація може дати розкид F1, тому навчаємо п\'ять і вибираємо за валідацією.', `Поріг із завдання ${f(c.f1Min, 2)}, мажоритарна лінія ${f(c.majority, 4)}, у нас ${f(c.f1, 4)}.`, 'Ознаки з вікна історії: різниці, ковзні відхилення, частота зміни режиму.'));
+    const cols = c.columns;
+    const maxRow = r => Math.max(...r.cells);
+    const tbl = el('div', { class: 'tw' }, el('table', { class: 'hm' }, el('thead', {}, el('tr', {}, el('th', {}), cols.map(h => el('th', {}, 'передбачено: ' + h)))),
+      el('tbody', {}, c.matrix.map(r => { const tot = r.cells.reduce((a, b) => a + b, 0); return el('tr', {}, el('td', { class: 'lab' }, 'істинний: ' + r.label),
+        r.cells.map(v => { const share = v / tot; const td = el('td', { style: { background: `color-mix(in srgb, var(--seq) ${Math.round(share * 100)}%, transparent)`, color: share > .45 ? '#fff' : 'var(--ink)' } }, v); tip(td, `${r.label} → ${v} з ${tot} (${f(share * 100, 1)} %)`); return td; })); }))));
+    const m = card('Матриця помилок на valid.csv', 'Колір — частка рядка. Найчастіша помилка: перехідний режим сприймається як норма.', tbl,
+      el('p', { class: 'hint' }, 'Класи майже не змінюють Q: R рахується за полем critical, а клас лише визначає, які некритичні кадри підуть раніше (таблиця впливу блоків нижче).'));
+    return [best, m];
+  }, 'Прогноз', overview?.classifier);
+}
+
+/* ---------- 2. Стиснення ---------- */
+function renderCompress() {
+  const h = overview?.huffman;
+  const p = overview?.packet;
+  const tiles = $('#compressTiles'); tiles.replaceChildren();
+  if (h?.ok) {
+    const d = h.data;
+    tiles.append(tile('Вікно передавача', d.windowFrames + ' кадрів', `${d.symbols} різних байтів`), tile('Таблиця довжин', d.tableBytes + ' Б', 'з 437 Б навантаження'),
+      tile('Ентропія байтів', f(d.entropy, 2) + ' біт', `середня довжина коду ${f(d.avgBits, 2)} біт`), tile('Влазить у пакет', `${d.huffmanFrames} проти ${d.rawFrames}`, 'кадрів: Гаффман проти без стиснення'));
+  }
+  fill('compressBody', d => {
+    const fit = card('Скільки кадрів влізає в один пакет', 'Таблиця Гаффмана з\'їдає місце, тому на цих даних стиснення часто програє сирим байтам.',
+      hbars([{ label: 'Гаффман', sub: `пакет ${d.huffmanPacketBytes} Б · цінність ${d.huffmanValue}`, value: d.huffmanFrames, text: d.huffmanFrames + ' кадрів', color: 'var(--s1)' },
+        { label: 'Без стиснення', sub: `пакет ${d.rawPacketBytes} Б · цінність ${d.rawValue}`, value: d.rawFrames, text: d.rawFrames + ' кадрів', color: 'var(--s2)' }], { min: 0, max: 40, ticks: [0, 10, 20, 30, 40] }),
+      say(`Таблиця на ${d.symbols} символів займає ${d.tableBytes} байтів із 437.`, 'Передавач для кожного пакета порівнює цінність на біт і вибирає Гаффмана або NO_COMPRESSION.', 'Стиснення не завжди дає виграш після врахування таблиці кодів.'));
+    const hist = card('Довжини кодів', 'Скільки символів має код кожної довжини. Максимум за форматом — 15 біт.',
+      vbars(d.histogram.map(x => ({ x: x.length, y: x.symbols })), { aria: 'Гістограма довжин кодів', xlabel: 'довжина', caption: 'довжина коду, біт' }));
+    const top = card('Найчастіші байти вікна', 'Чим частіший байт, тим коротший код.',
+      table(['Байт', 'Разів', 'Довжина', 'Код'], d.top.map(t => [el('code', {}, t.symbol), t.count, t.length, el('code', {}, t.code)]), [1, 2], 'compact'));
+    const ord = card('Стиснення і шифрування: який порядок', 'Шифротекст схожий на випадкові байти, тому стиснути його не вдається.',
+      hbars(d.order.map((o, i) => ({ label: o.name, sub: o.bytes + ' Б', value: o.ratio, text: f(o.ratio, 3), color: i === 2 ? 'var(--s2)' : 'var(--s1)' })), { min: 0, max: 1.4, ticks: [0, .5, 1, 1.4], refs: [{ v: 1, label: 'без змін' }] }),
+      el('p', { class: 'hint' }, 'Коефіцієнт стиснення: більше — краще. Порядок «зашифрувати → стиснути» гірший за сирі дані.'));
+    const r = d.ref04;
+    const refCard = card(`Еталон викладача ref_04: ${r.frames} кадри`, 'Наш Гаффман відтворює бітовий потік еталона' + (r.matchesReference ? ' байт у байт.' : ', але збіг не підтвердився.'),
+      el('div', { class: 'ref-flow' }, [
+        ['Сирі кадри', r.rawBits], ['Потік Гаффмана', r.streamBits], ['Навантаження', r.payloadBits], ['Увесь пакет', r.packetBits]
+      ].map(x => el('span', {}, el('b', {}, x[1] + ' біт'), x[0]))),
+      hbars([{ label: 'Сирі байти кадрів', sub: 'без стиснення', value: r.rawBits, text: r.rawBits + ' біт', color: 'var(--s2)' },
+        { label: 'Потік Гаффмана', sub: `коефіцієнт ${f(r.rawBits / r.streamBits, 2)}`, value: r.streamBits, text: r.streamBits + ' біт', color: 'var(--s1)' },
+        { label: 'Навантаження', sub: `потік + таблиця ${r.symbols} символів (${r.tableBits} біт) + 14 Б службових`, value: r.payloadBits, text: r.payloadBits + ' біт', color: 'var(--neg)' },
+        { label: 'Увесь пакет', sub: 'навантаження + заголовок 43 Б + HMAC 32 Б', value: r.packetBits, text: r.packetBits + ' біт', color: 'var(--s3)' }],
+        { min: 0, max: 7000, ticks: [0, 2000, 4000, 6000], refs: [{ v: r.rawBits, label: 'без стиснення' }] }),
+      el('p', { class: 'hint' }, `Еталон має ${r.packetBits / 8} Б: приймач зобов'язаний прийняти його, хоча передавач створює пакети не більші за 512 Б.`),
+      el('p', { class: 'hint' }, `Для рівного порівняння: без стиснення пакет із тими самими службовими полями мав би ${r.rawPacketBits} біт проти ${r.packetBits} біт із Гаффманом.`),
+      say(`Сам потік: ${r.rawBits} → ${r.streamBits} біт.`, `З таблицею та службовими полями: ${r.payloadBits} біт навантаження, коефіцієнт ${f(r.rawBits / r.payloadBits, 2)}.`, 'Тому передавач для кожного пакета вирішує, стискати чи ні.'));
+    const example = card('Як жадібне дерево дає довжини', 'Навчальний приклад: A × 5, B × 2, C × 1. Довжини та коди нижче обчислив наш HuffmanCodec.',
+      el('p', {}, el('code', {}, 'C(1) + B(2) → вузол(3); вузол(3) + A(5) → корінь(8)')),
+      table(['Байт', 'Частота', 'Довжина', 'Канонічний код'], d.example.map(x => [el('code', {}, x.symbol), x.count, x.length, el('code', {}, x.code)]), [1, 2], 'compact'),
+      say('Два найрідші вузли зливаються першими.', 'Довжина — це глибина листка: частий A має 1 біт, рідкісні B і C — по 2.', 'У пакет ідуть довжини; канонічні коди приймач відновить сам.'));
+    const canonical = p?.ok ? card('Канонічні коди еталона ref_01', 'Один кадр: довжини дає алгоритм Гаффмана, коди — канонічне правило. Біти записуються старшим уперед.',
+      table(['Байт', 'Довжина', 'Код'], p.data.table.map(t => [el('code', {}, t.symbol), t.length, el('code', {}, t.code)]), [1], 'compact'),
+      el('p', { class: 'hint' }, 'Бітовий потік: ', el('code', {}, p.data.bitstream.toUpperCase().replace(/(..)/g, '$1 ').trim()), ' · наш кодер відтворює його побайтово.')) : null;
+    const more = el('details', { class: 'extras' }, el('summary', {}, 'Додаткові дані: довжини кодів, часті байти, порядок шифрування'), hist, top, ord);
+    return [refCard, fit, example, canonical, more];
+  }, 'Стиснення', h);
+}
+
+/* ---------- 3. Пакування ---------- */
+function knapsackDemo() {
+  const items = [{ w: 10, v: 60 }, { w: 20, v: 100 }, { w: 30, v: 120 }], cap = 50;
+  const order = items.map((it, i) => ({ ...it, i, d: it.v / it.w })).sort((a, b) => b.d - a.d);
+  let used = 0; const greedy = new Set(); for (const it of order) if (used + it.w <= cap) { used += it.w; greedy.add(it.i); }
+  let best = -1, bestSet = null; for (let m = 0; m < 8; m++) { let w = 0, v = 0; for (let i = 0; i < 3; i++) if (m >> i & 1) { w += items[i].w; v += items[i].v; } if (w <= cap && v > best) { best = v; bestSet = new Set([0, 1, 2].filter(i => m >> i & 1)); } }
+  const sum = s => [...s].reduce((a, i) => a + items[i].v, 0);
+  const cards = items.map((it, i) => el('div', { class: 'item' + (bestSet.has(i) ? ' pick' : '') + (greedy.has(i) ? ' pick2' : '') }, el('b', {}, `Предмет ${i + 1}`), el('div', {}, `вага ${it.w}, цінність ${it.v}`), el('div', { class: 'sk' }, `щільність ${f(it.v / it.w, 1)}`)));
+  return card('Чому жадібний не завжди оптимальний', `Місткість ${cap}. Жадібний бере найщільніші предмети, ДП шукає найкращий набір.`,
+    el('div', { class: 'mini' }, cards),
+    el('p', {}, el('span', { style: { color: 'var(--s2)', fontWeight: 600 } }, `Жадібний: ${sum(greedy)}`), ' (предмети ' + [...greedy].map(i => i + 1).join(' і ') + ')  ·  ', el('span', { style: { color: 'var(--s1)', fontWeight: 600 } }, `ДП: ${best}`), ' (предмети ' + [...bestSet].map(i => i + 1).join(' і ') + ')'),
+    el('p', { class: 'hint' }, 'Синя рамка — вибір ДП, помаранчева — вибір жадібного.'),
+    say('Жадібний за щільністю v/w швидкий, O(n log n), але може схибити.', 'ДП перебирає всі місткості, це O(n·W), і завжди оптимальний.', 'Жадібний «найкращий із двох» (набір проти найціннішого одного предмета) гарантує щонайменше половину оптимуму.'));
+}
+function renderPack() {
+  const k = overview?.knapsack, tiles = $('#packTiles'); tiles.replaceChildren();
+  if (k?.ok) {
+    const d = k.data;
+    tiles.append(tile('Вікон у сеансі', d.packets, 'пакетів, рахуємо по черзі за цінністю'), tile('Σ цінність, ДП', d.dpTotal, `жадібний ${d.greedyTotal}`), tile('Різниця жадібного', f(d.gapPercent, 2) + ' %', `найгірше вікно ${f(d.worstWindowGapPercent, 2)} %`),
+      tile('Час, ДП', `${f(d.dpMicros / 1000, 1)} мс`, `жадібний ${f(d.greedyMicros / 1000, 1)} мс на весь сеанс`));
+  }
+  const host = $('#packBody'); host.replaceChildren(knapsackDemo());
+  if (k?.ok) {
+    const d = k.data;
+    host.append(card('На справжніх вікнах сеансу', 'Те саме вікно віддаємо обом алгоритмам і порівнюємо суму цінностей.',
+      hbars([{ label: 'ДП (оптимум)', value: d.dpTotal, text: String(d.dpTotal), color: 'var(--s1)' }, { label: 'Жадібний', value: d.greedyTotal, text: String(d.greedyTotal), color: 'var(--s2)' }], { min: 0, max: Math.max(d.dpTotal, d.greedyTotal) * 1.12 }),
+      el('p', { class: 'hint' }, d.windowsDiffer === 0 ? `У всіх ${d.packets} вікнах результати збіглися: цінності некритичних кадрів мало відрізняються, і жадібний влучає в оптимум.` : `Результати відрізнялися у ${d.windowsDiffer} із ${d.packets} вікон.`)));
+  } else if (k) host.append(unavailable('Рюкзак', k.error));
+  const g = overview?.ga;
+  if (g?.ok) {
+    const d = g.data, refLine = d.notes.map(n => /Параметри за замовчуванням.*Q = ([0-9.]+)/.exec(n)).find(Boolean);
+    const mk = (name, color, key, src, o = {}) => ({ name, color, pts: src.map(p => ({ x: p.generation, y: p[key] })), ...o });
+    host.append(card('Генетичний алгоритм проти випадкового пошуку', 'Найкраща особина за поколіннями при однаковій кількості обчислень fitness.',
+      legend([{ name: 'ГА, найкраща', color: 'var(--s1)' }, { name: 'ГА, середня (пунктир)', color: 'var(--s1)' }, { name: 'Випадковий, найкраща', color: 'var(--s2)' }]),
+      lines([mk('ГА best', 'var(--s1)', 'best', d.ga), mk('ГА mean', 'var(--s1)', 'mean', d.ga, { thin: true, dash: true }), mk('Випадк. best', 'var(--s2)', 'best', d.random)],
+        { aria: 'Збіжність ГА', xname: 'Покоління', xcaption: 'покоління', ref: refLine ? { v: parseFloat(refLine[1]), label: 'до ГА' } : null }),
+      el('ul', { class: 'hint' }, d.notes.map(n => el('li', {}, n.replace(/\*\*/g, '').replace('Параметри за замовчуванням', 'Початкові параметри цього експерименту')))),
+      say('Хромосома з трьох генів: розмір вікна Гаффмана, поріг NO_COMPRESSION, вага пріоритету.', 'Елітизм гарантує, що найкращий результат не погіршується від покоління до покоління.', 'ГА перевершив початкові ручні параметри; поточний Sender уже використовує знайдені параметри. Випадковий пошук майже наздоганяє: простір невеликий.')));
+  } else if (g) host.append(unavailable('Генетичний алгоритм', g.error));
+}
+
+/* ---------- 4. Система ---------- */
+function renderSystem() {
+  const host = $('#systemBody'); host.replaceChildren();
+  const data = perScenario(), cfg = overview?.config?.ok ? overview.config.data : { alpha: .5, beta: .35, gamma: .15 };
+  if (!data) { host.append(card('Результати прогону', 'Ще немає даних.', el('div', { class: 'unavailable' }, 'Натисніть «Запустити прогін» вгорі.'))); }
+  else {
+    host.append(card('З чого складається Q', 'Внесок кожної компоненти: α·S, β·R, γ·T. Довжина смуги — Q.',
+      legend([{ name: `S: економія, α = ${cfg.alpha}`, color: 'var(--s1)' }, { name: `R: критичні кадри, β = ${cfg.beta}`, color: 'var(--s2)' }, { name: `T: швидкість, γ = ${cfg.gamma}`, color: 'var(--s3)' }]),
+      stacked(data.map(d => ({ label: d.name, sub: `Q = ${f(d.q, 4)}`, parts: [cfg.alpha * d.S, cfg.beta * d.R, cfg.gamma * d.T] })), [{ name: 'S', color: 'var(--s1)' }, { name: 'R', color: 'var(--s2)' }, { name: 'T', color: 'var(--s3)' }], { max: 1, fmt: v => f(v, 3), minLabel: .06 }),
+      say('Q майже однакове в спокійному й робочому сценарії, бо дублі критичних кадрів дають R = 1.', 'В аварійному сценарії пакети поза бюджетом часу не входять до B_sent, тому S і Q зростають.', 'S менше 0,5, бо кожен пакет несе 75 байтів заголовка і HMAC, а дублі додають ще трафіку.')));
+    host.append(card('Що сталося з пакетами', 'Середнє за seed: доставлено, втрачено в каналі, не вмістилося в бюджет часу.',
+      legend([{ name: 'доставлено', color: 'var(--s1)' }, { name: 'втрачено каналом', color: 'var(--s2)' }, { name: 'не вмістилося в бюджет', color: 'var(--muted)' }]),
+      stacked(data.map(d => ({ label: d.name, parts: [d.delivered, d.lost, d.over] })), [{ name: 'доставлено', color: 'var(--s1)' }, { name: 'втрачено каналом', color: 'var(--s2)' }, { name: 'не вмістилося в бюджет', color: 'var(--muted)' }], { fmt: v => f(v, 1) }),
+      el('p', { class: 'hint' }, 'Черга впорядкована за цінністю, тому критичні кадри йдуть у ранні пакети і дістаються до приймача навіть тоді, коли пізніх пакетів бюджет уже не вміщає.')));
+    host.append(card('Підсумок за сценаріями', `Середнє за ${state.results.Seeds.length} seed.`,
+      table(['Сценарій', 'Q', 'S', 'R', 'R мін.', 'Обчислення, с'], data.map(d => [d.name, f(d.q, 4), f(d.S, 4), f(d.rMean, 4), f(d.rMin, 4), f(d.compute, 3)]), [1, 2, 3, 4, 5])));
+  }
+  const a = overview?.ablation;
+  if (a?.ok) {
+    const full = a.data[0];
+    const rows = a.data.slice(1).map(v => ({ label: v.variant, sub: `Q середнє ${f(v.mean, 4)}`, value: (full.mean - v.mean) * 1000, text: ((full.mean - v.mean) * 1000 >= 0 ? '+' : '−') + f(Math.abs(full.mean - v.mean) * 1000, 1), color: (full.mean - v.mean) >= 0 ? 'var(--s1)' : 'var(--neg)', tip: `${v.variant}: Q ${f(v.mean, 4)} проти ${f(full.mean, 4)} у повної системи` }))
+      .sort((x, y) => y.value - x.value);
+    host.append(card('Вплив кожного блоку', `Окремий вимір: різниця Q повної системи (${f(full.mean, 4)}) і системи без блока, в тисячних. Плюс — блок допомагає, мінус — шкодить.`,
+      hbars(rows, { min: -2, max: 14, ticks: [0, 4, 8, 12] }),
+      el('p', { class: 'hint' }, 'Найбільше дає планувальник черги й дублювання критичних кадрів. Класифікатор, ДП і рюкзак майже не змінюють Q на цих даних: різниця в межах тисячних.')));
+  } else if (a) host.append(unavailable('Вплив блоків', a.error));
+}
+
+/* ---------- 5. Захист ---------- */
+function renderSecure() {
+  const host = $('#secureBody'); host.replaceChildren();
+  const p = overview?.packet;
+  if (p?.ok) {
+    const d = p.data, colors = { header: 'var(--s1)', cipher: 'var(--s3)', mac: 'var(--s2)' }, names = { header: 'заголовок (відкритий)', cipher: 'шифротекст', mac: 'HMAC' };
+    const strip = el('div', { class: 'strip' }, d.segments.map(s => { const b = el('div', { class: 'b', style: { flex: `${s.length} 1 0`, background: colors[s.group] } }); tip(b, `${s.name}: ${s.length} Б · ${s.note}`); return b; }));
+    host.append(card('Анатомія пакета ref_01', `${d.total} байтів: заголовок 43, шифротекст ${d.segments[7].length}, HMAC 32. Приймач ${d.accepted ? 'прийняв його і відновив кадр' : 'відхилив його'}.`,
+      legend(Object.keys(colors).map(k => ({ name: names[k], color: colors[k] }))), strip,
+      table(['Поле', 'Байти', 'Значення'], d.segments.filter(s => s.group === 'header').map(s => [s.name, s.length, s.note]), [1]),
+      d.frame ? el('p', { class: 'hint' }, `Відновлений кадр: висота ${d.frame.altitudeDm} дм, температура ${d.frame.tempC10 / 10} °C, вібрація ${d.frame.vibration}, режим ${d.frame.mode}, критичний ${d.frame.critical ? 'так' : 'ні'}.`) : null,
+      say('Заголовок відкритий, бо приймачу треба знати сіль і nonce до розшифрування.', 'Nonce унікальний для кожного пакета: 8 байтів сеансу плюс номер пакета.', 'Ключі різні: K_enc для шифрування, K_mac для HMAC, виводяться PBKDF2 один раз на сеанс.')));
+  } else if (p) host.append(unavailable('Анатомія пакета', p.error));
+  const c = overview?.checks;
+  if (c?.ok) {
+    host.append(card('Перевірка пошкоджених пакетів', 'Ми псуємо пакет по-різному, і приймач щоразу відповідає потрібним кодом, не розшифровуючи нічого.',
+      table(['Що зробили', 'Очікуємо', 'Отримали', ''], c.data.tamper.map(t => [t.title, el('code', {}, t.expected), el('code', {}, t.got), el('span', { class: t.ok ? 'ok' : 'bad' }, t.ok ? '✓' : '✗')])),
+      say('HMAC перевіряється у постійний час до розшифрування: підроблений пакет відсікається одразу.', 'Невірний пароль дає E_HMAC, а не сміття: розшифрування навіть не починається.', 'Якби ми спершу розшифровували, приймач був би вразливий до атак на формат.')));
+    const refs = c.data.refs, okAll = refs.every(r => r.ok);
+    host.append(card('Еталонні пакети викладача', okAll ? 'Усі 11 файлів оброблено правильно.' : 'Є розбіжності.',
+      table(['Файл', 'Байтів', 'Код', ''], refs.map(r => [el('code', {}, r.file), r.size, el('code', {}, r.got), el('span', { class: r.ok ? 'ok' : 'bad' }, r.ok ? '✓' : '✗ очікувалось ' + r.expected)]), [1])));
+  } else if (c) host.append(unavailable('Перевірка захисту', c.error));
+}
+
+/* ---------- запуск і стан ---------- */
+const banner = $('#banner');
+function showBanner(text) { banner.textContent = text || ''; banner.classList.toggle('show', !!text); }
+function apply(st) {
+  state = st;
+  $('#source').textContent = st.hasData ? `Runner: ${st.source}` : 'Runner: немає даних';
+  showBanner(st.error);
+  $('#run').disabled = !!st.running; $('#run').textContent = st.running ? 'Прогін іде…' : 'Запустити прогін';
+  renderHero(); renderSystem();
+}
+async function getState() { try { const r = await fetch('/api/state', { cache: 'no-store' }); return r.ok ? await r.json() : null; } catch { return null; } }
+let polling = false;
+async function pollRun() {
+  if (polling) return;
+  polling = true;
+  const started = Date.now();
+  try {
+    while (Date.now() - started < 110000) {
+      await sleep(500);
+      const st = await getState();
+      if (!st) { showBanner('Немає зв\'язку із сервером сторінки. Показані попередні результати.'); return; }
+      apply(st);
+      if (!st.running) return;
+    }
+    showBanner('Прогін усе ще виконується. Оновіть сторінку, щоб перевірити його стан.');
+  } finally {
+    polling = false;
+    $('#run').disabled = false;
+    $('#run').textContent = 'Запустити прогін';
+  }
+}
+async function runNow() {
+  $('#run').disabled = true; $('#run').textContent = 'Прогін іде…'; showBanner('');
+  try {
+    const r = await fetch('/api/run', { method: 'POST' });
+    if (r.status !== 202 && r.status !== 409) throw new Error(`сервер відповів ${r.status}`);
+    if (r.status === 409) {
+      const st = await getState();
+      if (st && !st.running) {
+        apply(st);
+        showBanner('Попередній прогін ще завершується після тайм-ауту. Спробуйте за кілька секунд.');
+        return;
+      }
+    }
+    await pollRun();
+  } catch (e) {
+    showBanner(`Не вдалося запустити прогін: ${e.message}. Показані попередні результати.`);
+    $('#run').disabled = false;
+    $('#run').textContent = 'Запустити прогін';
+  }
+}
+
+/* ---------- навігація ---------- */
+const sections = ['overview', 'predict', 'compress', 'pack', 'system', 'secure'];
+function current() { let c = 0; sections.forEach((id, i) => { if ($('#' + id).getBoundingClientRect().top < 140) c = i; }); return c; }
+function go(i) { $('#' + sections[Math.max(0, Math.min(sections.length - 1, i))]).scrollIntoView(); }
+addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('button, input, textarea')) return;
+  if (e.key === 'ArrowRight' || e.key === 'PageDown') { go(current() + 1); e.preventDefault(); }
+  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(current() - 1); e.preventDefault(); }
+  else if (/^[1-5]$/.test(e.key)) go(Number(e.key));
+  else if (e.key === 'Home') go(0);
+});
+addEventListener('scroll', () => { const c = current(); document.querySelectorAll('#nav a').forEach((a, i) => a.classList.toggle('on', i === c)); }, { passive: true });
+
+/* ---------- тема ---------- */
+const themeBtn = $('#theme');
+try { const t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch {}
+themeBtn.addEventListener('click', () => {
+  const root = document.documentElement, dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  root.dataset.theme = dark ? 'light' : 'dark'; try { localStorage.setItem('theme', root.dataset.theme); } catch {}
+});
+
+/* ---------- старт ---------- */
+$('#run').addEventListener('click', runNow);
+(async function init() {
+  renderPipe();
+  const [ov, st, pre] = await Promise.allSettled([fetch('/api/overview').then(r => r.json()), getState(), fetch('/api/preflight').then(r => r.json())]);
+  if (ov.status === 'fulfilled') overview = ov.value; else showBanner('Дані зон не завантажилися: перезапустіть сторінку.');
+  renderPredict(); renderCompress(); renderPack(); renderSecure();
+  if (st.status === 'fulfilled' && st.value) { apply(st.value); if (st.value.running) void pollRun(); } else { renderHero(); renderSystem(); }
+  if (pre.status === 'fulfilled') { const bad = pre.value.filter(p => !p.ok); if (bad.length) $('#pre').textContent = ' Не пройдено перевірку: ' + bad.map(b => b.name).join(', ') + '.'; }
+  $('#nav a').classList.add('on');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Telemetry.Present</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Telemetry.System\Telemetry.System.csproj" />
+    <ProjectReference Include="..\..\src\Telemetry.Packet\Telemetry.Packet.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Telemetry.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
