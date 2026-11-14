@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Telemetry.Security", "src\T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Telemetry.System", "src\Telemetry.System\Telemetry.System.csproj", "{50954296-B198-4177-B83C-629133353D2F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Telemetry.Attack", "src\Telemetry.Attack\Telemetry.Attack.csproj", "{A7C1E2D4-3B5F-4E6A-9C8D-1F2E3D4C5B6A}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{734FD4A7-8250-4C3B-BB54-E2DBAC80E2AC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Telemetry.Tools", "tools\Telemetry.Tools\Telemetry.Tools.csproj", "{79A402BB-8E61-4855-9DA6-CA178F44D531}"
@@ -40,6 +42,10 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A7C1E2D4-3B5F-4E6A-9C8D-1F2E3D4C5B6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7C1E2D4-3B5F-4E6A-9C8D-1F2E3D4C5B6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7C1E2D4-3B5F-4E6A-9C8D-1F2E3D4C5B6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7C1E2D4-3B5F-4E6A-9C8D-1F2E3D4C5B6A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F9935530-EECC-43C6-9EC4-9BF9D88E60F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F9935530-EECC-43C6-9EC4-9BF9D88E60F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F9935530-EECC-43C6-9EC4-9BF9D88E60F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -86,6 +92,7 @@ Global
 		{4CD9C619-6E27-499C-8B2F-DDDE8E47931D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{A7C1E2D4-3B5F-4E6A-9C8D-1F2E3D4C5B6A} = {F7D397AC-7F57-40C6-A2CA-39659387665C}
 		{F9935530-EECC-43C6-9EC4-9BF9D88E60F8} = {F7D397AC-7F57-40C6-A2CA-39659387665C}
 		{153504D5-59F9-41AF-B4D2-6BE863CE6172} = {F7D397AC-7F57-40C6-A2CA-39659387665C}
 		{2F3F707E-867C-4DA3-938B-3A524B715E9D} = {F7D397AC-7F57-40C6-A2CA-39659387665C}

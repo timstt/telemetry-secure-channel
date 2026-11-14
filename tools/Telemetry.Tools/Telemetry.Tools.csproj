@@ -8,6 +8,7 @@
     <ProjectReference Include="..\..\src\Telemetry.System\Telemetry.System.csproj" />
     <ProjectReference Include="..\..\src\Telemetry.Packet\Telemetry.Packet.csproj" />
     <ProjectReference Include="..\..\src\Telemetry.Optimize\Telemetry.Optimize.csproj" />
+    <ProjectReference Include="..\..\src\Telemetry.Attack\Telemetry.Attack.csproj" />
   </ItemGroup>
 
 </Project>
