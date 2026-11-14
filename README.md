@@ -71,7 +71,7 @@ dotnet run --project tools/Telemetry.Tools -- report                 # табл�
 | **Ваня** | Перцептрон | `Telemetry.Predict`: Mlp, Features, Classifier; `Frame` + валідація входу | C1 №9; C2 п.1 |
 | **Коля** | Захист і формат пакета | `Telemetry.Security`: Kdf, CtrCipher, Mac; `Telemetry.Packet`: Packet, Errors, Receiver | C1 №10, №11, №12; C5 |
 | **Георгій** | ДП + генетичний алгоритм | `Telemetry.Packing`: KnapsackDp; `Telemetry.Optimize`: GeneticAlgorithm, RandomSearch | C1 №8; ДП-частина таблиці 1; таблиця 5 |
-| **Тимофій** (тімлід) | Система в цілому + жадібна черга | `Telemetry.System`: Scheduler, Sender, Metric, ChannelBridge; Runner, `check-ref`, `measure-q`, CI, README | C1 №1–5; C2 п.3, п.4; C3; C4; таблиці 2 і 4 |
+| **Тимофій** | Система в цілому + жадібна черга | `Telemetry.System`: Scheduler, Sender, Metric, ChannelBridge; Runner, `check-ref`, `measure-q`, CI, README | C1 №1–5; C2 п.3, п.4; C3; C4; таблиці 2 і 4 |
 
 Кожен захищає свою частину (E1 — 6 питань, E2 — 2 мікрозміни). Таблицю 1 «ДП проти жадібності» Саша й Георгій
 захищають разом.
