@@ -39,8 +39,11 @@ public sealed record SenderOptions(
     byte[]? Salt = null,
     byte[]? NoncePrefix = null)
 {
-    /// <summary>Параметри за замовчуванням: вікно 32, поріг ентропії 7,5 біт/байт, вага пріоритету 1.</summary>
-    public static Params DefaultParams { get; } = new(32, 7.5, 1.0);
+    /// <summary>
+    /// Параметри за замовчуванням — найкраща особина ГА (results/ga/summary.md): вікно 37 кадрів, поріг ентропії
+    /// 8 біт/байт (рішення про NO_COMPRESSION фактично приймає порівняння цінності на біт), вага пріоритету класу 2,728.
+    /// </summary>
+    public static Params DefaultParams { get; } = new(37, 8.0, 2.728);
 
     /// <summary>Фактичні параметри.</summary>
     public Params EffectiveParams => Params ?? DefaultParams;
