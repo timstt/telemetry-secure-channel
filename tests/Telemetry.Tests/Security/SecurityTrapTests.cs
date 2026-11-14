@@ -9,7 +9,7 @@ public class SecurityTrapTests
 {
     private static readonly byte[] Salt = TestData.Hex("000102030405060708090A0B0C0D0E0F");
 
-    [Fact(Skip = TestData.Pending)]
+    [Fact]
     public void Trap07_kdf_keys_are_different_and_cached()
     {
         var kdf = new Kdf();
@@ -20,7 +20,7 @@ public class SecurityTrapTests
         Assert.Same(kEnc, kdf.Derive("algo2026", Salt).KEnc); // кеш на сеанс, без повторних 100000 ітерацій
     }
 
-    [Fact(Skip = TestData.Pending)]
+    [Fact]
     public void Trap08_ctr_counter_starts_at_1_ref01_ciphertext()
     {
         var packet = File.ReadAllBytes(TestData.Reference("ref_01_single_frame.bin"));
@@ -32,7 +32,7 @@ public class SecurityTrapTests
         Assert.Equal(plaintext, CtrCipher.Transform(kEnc, TestData.Hex("010203040506070800000000"), ct));
     }
 
-    [Fact(Skip = TestData.Pending)]
+    [Fact]
     public void Trap09_hmac_covers_header_and_ciphertext()
     {
         var packet = File.ReadAllBytes(TestData.Reference("ref_01_single_frame.bin"));
