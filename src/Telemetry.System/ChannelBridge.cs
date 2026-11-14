@@ -27,7 +27,7 @@ public sealed class ChannelBridge : IChannel, IDisposable
     /// <param name="scenarioJson">JSON-об'єкт сценарію рівно як у team_config.json.</param>
     /// <param name="seed">Seed моделі каналу.</param>
     /// <param name="bridgePath">Шлях до bridge.py; за замовчуванням шукається channel/bridge.py вгору від теки програми.</param>
-    /// <param name="pythonExecutable">Інтерпретатор Python; за замовчуванням див. <see cref="DefaultPython"/>.</param>
+    /// <param name="pythonExecutable">Інтерпретатор Python; за замовчуванням див. <see cref="DefaultPython()"/>.</param>
     /// <exception cref="InvalidOperationException">Міст не запустився або не підтвердив ініціалізацію.</exception>
     public ChannelBridge(string scenarioJson, int seed, string? bridgePath = null, string? pythonExecutable = null)
     {
@@ -84,16 +84,62 @@ public sealed class ChannelBridge : IChannel, IDisposable
             : throw new KeyNotFoundException($"сценарій «{scenarioName}» відсутній у team_config.json");
     }
 
-    /// <summary>Інтерпретатор за замовчуванням: TELEMETRY_PYTHON або python/python3 залежно від ОС.</summary>
-    public static string DefaultPython()
+    /// <summary>
+    /// Інтерпретатор за замовчуванням: TELEMETRY_PYTHON, інакше на Windows — справжній python.exe з PATH
+    /// (заглушки Microsoft Store у WindowsApps пропускаються), далі лаунчер py.exe; на інших ОС — python3.
+    /// </summary>
+    public static string DefaultPython() =>
+        DefaultPython(
+            Environment.GetEnvironmentVariable("TELEMETRY_PYTHON"),
+            OperatingSystem.IsWindows(),
+            Environment.GetEnvironmentVariable("PATH") ?? "",
+            File.Exists);
+
+    /// <summary>Вибір інтерпретатора з явно заданим оточенням (для тестів).</summary>
+    /// <param name="envOverride">Значення TELEMETRY_PYTHON.</param>
+    /// <param name="isWindows">Чи ОС — Windows.</param>
+    /// <param name="path">Значення PATH.</param>
+    /// <param name="exists">Перевірка існування файла.</param>
+    public static string DefaultPython(string? envOverride, bool isWindows, string path, Func<string, bool> exists)
     {
-        var env = Environment.GetEnvironmentVariable("TELEMETRY_PYTHON");
-        if (!string.IsNullOrWhiteSpace(env))
+        ArgumentNullException.ThrowIfNull(path);
+        ArgumentNullException.ThrowIfNull(exists);
+        if (!string.IsNullOrWhiteSpace(envOverride))
         {
-            return env;
+            return envOverride;
         }
 
-        return OperatingSystem.IsWindows() ? "python" : "python3";
+        if (!isWindows)
+        {
+            return "python3";
+        }
+
+        var dirs = path.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        foreach (var dir in dirs)
+        {
+            // Заглушка Store (…\Microsoft\WindowsApps\python.exe) відкриває магазин замість інтерпретатора.
+            if (dir.Contains("WindowsApps", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var candidate = Path.Combine(dir, "python.exe");
+            if (exists(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        foreach (var dir in dirs)
+        {
+            var launcher = Path.Combine(dir, "py.exe");
+            if (exists(launcher))
+            {
+                return launcher;
+            }
+        }
+
+        return "python";
     }
 
     /// <summary>Шукає channel/bridge.py у теці програми і вище (до кореня репозиторію).</summary>

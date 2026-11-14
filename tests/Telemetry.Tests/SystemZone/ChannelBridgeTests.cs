@@ -173,11 +173,46 @@ public class ChannelBridgeTests
             Environment.SetEnvironmentVariable("TELEMETRY_PYTHON", "my-python");
             Assert.Equal("my-python", ChannelBridge.DefaultPython());
             Environment.SetEnvironmentVariable("TELEMETRY_PYTHON", null);
-            Assert.Equal(OperatingSystem.IsWindows() ? "python" : "python3", ChannelBridge.DefaultPython());
+            var detected = ChannelBridge.DefaultPython();
+            Assert.False(string.IsNullOrWhiteSpace(detected));
+            if (!OperatingSystem.IsWindows())
+            {
+                Assert.Equal("python3", detected);
+            }
         }
         finally
         {
             Environment.SetEnvironmentVariable("TELEMETRY_PYTHON", old);
         }
+    }
+
+    [Fact]
+    public void Windows_lookup_skips_store_stub_and_falls_back_to_py_launcher()
+    {
+        var sep = global::System.IO.Path.PathSeparator.ToString();
+        var store = global::System.IO.Path.Combine("u", "Microsoft", "WindowsApps");
+        var real = global::System.IO.Path.Combine("opt", "Python312");
+        var windows = global::System.IO.Path.Combine("c", "Windows");
+        var files = new HashSet<string>
+        {
+            global::System.IO.Path.Combine(store, "python.exe"),
+            global::System.IO.Path.Combine(windows, "py.exe"),
+        };
+
+        // Лише заглушка Store і py.exe → py.exe.
+        Assert.Equal(
+            global::System.IO.Path.Combine(windows, "py.exe"),
+            ChannelBridge.DefaultPython(null, true, store + sep + windows, files.Contains));
+
+        // Справжній python.exe має перевагу над py.exe, навіть якщо в PATH він пізніше за заглушку.
+        files.Add(global::System.IO.Path.Combine(real, "python.exe"));
+        Assert.Equal(
+            global::System.IO.Path.Combine(real, "python.exe"),
+            ChannelBridge.DefaultPython(" ", true, store + sep + windows + sep + real, files.Contains));
+
+        // Нічого не знайдено → «python»; змінна середовища та інші ОС — без пошуку.
+        Assert.Equal("python", ChannelBridge.DefaultPython(null, true, store, _ => false));
+        Assert.Equal("custom", ChannelBridge.DefaultPython("custom", true, store, files.Contains));
+        Assert.Equal("python3", ChannelBridge.DefaultPython(null, false, real, files.Contains));
     }
 }
