@@ -26,7 +26,7 @@ public class PredictTrapTests
     public void Frame_validation_rejects_bad_input(string line) =>
         Assert.ThrowsAny<FormatException>(() => Frame.ParseCsv(line));
 
-    [Fact(Skip = TestData.Pending)]
+    [Fact]
     public void Classifier_assigns_class_to_every_frame_including_session_start()
     {
         var frames = File.ReadLines(TestData.Path("data", "valid.csv")).Skip(1).Take(50).Select(Frame.ParseCsv).ToArray();
