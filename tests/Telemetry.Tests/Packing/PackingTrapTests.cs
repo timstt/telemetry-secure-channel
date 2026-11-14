@@ -1,13 +1,12 @@
 using Telemetry.Huffman;
 using Telemetry.Packing;
-using Telemetry.Tests.Infrastructure;
 
 namespace Telemetry.Tests.Packing;
 
 /// <summary>Пастка 10 і кейс C1 №8 (зона Георгія; жадібний — Саша).</summary>
 public class PackingTrapTests
 {
-    [Fact(Skip = TestData.Pending)]
+    [Fact]
     public void Dp_is_optimal_where_greedy_is_not()
     {
         // Класичний контрприклад: v/w жадібно бере предмет 0, оптимум — 1 і 2.
@@ -20,7 +19,7 @@ public class PackingTrapTests
         Assert.True(dp.Sum(i => w[i]) <= 50);
     }
 
-    [Fact(Skip = TestData.Pending)]
+    [Fact]
     public void Edge_cases_empty_window_oversized_item_nonpositive_capacity()
     {
         var dp = new KnapsackDp();
