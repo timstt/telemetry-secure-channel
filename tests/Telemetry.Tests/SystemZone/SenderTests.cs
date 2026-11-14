@@ -149,7 +149,7 @@ public class SenderTests
         Assert.Throws<ArgumentException>(() => NewSender(new SenderOptions(Salt: new byte[3])));
         Assert.Throws<ArgumentException>(() => NewSender(new SenderOptions(NoncePrefix: new byte[3])));
         Assert.Throws<InvalidOperationException>(() => NewSender(classifier: new WrongClassifier()).BuildPackets(Session.Value[..3]));
-        Assert.Equal(new Params(32, 7.5, 1.0), new SenderOptions().EffectiveParams);
+        Assert.Equal(new Params(37, 8.0, 2.728), new SenderOptions().EffectiveParams);
     }
 
     [Fact]
