@@ -62,7 +62,7 @@ try
     var bridge = ChannelBridge.FindBridgeScript();
     var runner = new SessionRunner(
         (scenario, seed) => new ChannelBridge(ChannelBridge.ScenarioJson(configJson, scenario), seed, bridge),
-        () => new TelemetrySystem(config.SessionPassword, new Scheduler()),
+        () => new TelemetrySystem(config, new Scheduler()),
         log);
     var report = runner.Run(
         () => SessionCsv.Load(sessionPath, log),

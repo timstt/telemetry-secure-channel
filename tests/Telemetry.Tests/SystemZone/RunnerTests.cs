@@ -320,7 +320,7 @@ public sealed class RunnerTests : IDisposable
         // Працює і з заглушками зон (прогони Failed), і після інтеграції (Ok): Runner не падає, лог чистий.
         using var text = new StringWriter();
         using var log = new RunLog(text, [Password]);
-        var runner = new SessionRunner((_, _) => new FakeChannel(), () => new TelemetrySystem(Password, new Scheduler()), log);
+        var runner = new SessionRunner((_, _) => new FakeChannel(), () => new TelemetrySystem(Config, new Scheduler()), log);
         var report = runner.Run(() => SampleFrames(30), Settings(120));
         Assert.Equal(15, report.Runs.Count);
         Assert.All(report.Runs, r => Assert.Contains(r.Status, new[] { RunStatus.Ok, RunStatus.Failed }));
