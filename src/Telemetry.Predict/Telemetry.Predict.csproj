@@ -5,6 +5,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Ваги перцептрона генерує команда train-classifier у tools/Telemetry.Tools. -->
+    <EmbeddedResource Include="classifier.json" LogicalName="Telemetry.Predict.classifier.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Telemetry.Core\Telemetry.Core.csproj" />
   </ItemGroup>
 
