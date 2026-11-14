@@ -1,9 +1,21 @@
 using System.Diagnostics;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Telemetry.Core;
 using Telemetry.System;
 
 namespace Telemetry.Present;
+
+internal sealed record RunProgress(
+    string Stage,
+    int Completed,
+    int Total,
+    string? LastScenario,
+    int? LastSeed,
+    string? LastStatus,
+    double? LastQ,
+    double? LastR,
+    IReadOnlyDictionary<string, int> ByScenario);
 
 /// <summary>
 /// Прогін Runner для сторінки. Збій чи тайм-аут ніколи не прибирає дані з екрана: показується останній
@@ -19,6 +31,7 @@ internal sealed class LiveRun(Func<string>? run = null, double timeoutSeconds = 
     private string source = "немає даних";
     private bool running;
     private string? lastError;
+    private RunProgress? progress;
     private double lastSeconds;
     private int runs;
     private long runId;
@@ -36,6 +49,14 @@ internal sealed class LiveRun(Func<string>? run = null, double timeoutSeconds = 
             {
                 return resultsJson is not null;
             }
+        }
+    }
+
+    public string? ResultJson()
+    {
+        lock (gate)
+        {
+            return resultsJson;
         }
     }
 
@@ -72,6 +93,7 @@ internal sealed class LiveRun(Func<string>? run = null, double timeoutSeconds = 
 
             running = true;
             lastError = null;
+            progress = Preparing();
             var id = ++runId;
             var task = Task.Run(() => Execute(id));
             worker = task;
@@ -88,6 +110,7 @@ internal sealed class LiveRun(Func<string>? run = null, double timeoutSeconds = 
         {
             running = true;
             lastError = null;
+            progress = Preparing();
             id = ++runId;
         }
 
@@ -108,6 +131,7 @@ internal sealed class LiveRun(Func<string>? run = null, double timeoutSeconds = 
                 ["runs"] = runs,
                 ["lastSeconds"] = lastSeconds,
                 ["error"] = lastError,
+                ["progress"] = progress is null ? null : JsonSerializer.SerializeToNode(progress, DemoData.Json),
                 ["results"] = resultsJson is null ? null : JsonNode.Parse(resultsJson),
             };
         }
@@ -120,6 +144,7 @@ internal sealed class LiveRun(Func<string>? run = null, double timeoutSeconds = 
             if (running && id == runId && ReferenceEquals(task, worker))
             {
                 running = false;
+                progress = progress is null ? null : progress with { Stage = "timeout" };
                 lastError = $"Прогін не вклався в {timeoutSeconds:F0} с. На екрані лишилися попередні результати.";
             }
         }
@@ -130,7 +155,7 @@ internal sealed class LiveRun(Func<string>? run = null, double timeoutSeconds = 
         var watch = Stopwatch.StartNew();
         try
         {
-            var json = (run ?? (() => RunOnce(Path.Combine(Repo.Out, "present-live"))))();
+            var json = (run ?? (() => RunOnce(Path.Combine(Repo.Out, "present-live"), id)))();
             lock (gate)
             {
                 if (!running || id != runId)
@@ -144,6 +169,7 @@ internal sealed class LiveRun(Func<string>? run = null, double timeoutSeconds = 
                 runs++;
                 lastSeconds = watch.Elapsed.TotalSeconds;
                 running = false;
+                progress = progress is null ? null : progress with { Stage = "done" };
             }
 
             Completed?.Invoke(json);
@@ -162,11 +188,44 @@ internal sealed class LiveRun(Func<string>? run = null, double timeoutSeconds = 
                 lastError = "Прогін не вдався: " + ex.Message.TrimEnd('.') + "." + (resultsJson is null ? "" : " На екрані лишилися попередні результати.");
                 lastSeconds = watch.Elapsed.TotalSeconds;
                 running = false;
+                progress = progress is null ? null : progress with { Stage = "failed" };
             }
         }
     }
 
-    private static string RunOnce(string liveDir)
+    private static RunProgress Preparing() => new("preparing", 0, 0, null, null, null, null, null, new Dictionary<string, int>());
+
+    private void SetProgress(long id, string[] scenarios, int seeds)
+    {
+        lock (gate)
+        {
+            if (!running || id != runId)
+            {
+                return;
+            }
+
+            progress = new RunProgress("running", 0, scenarios.Length * seeds, null, null, null, null, null,
+                scenarios.ToDictionary(scenario => scenario, _ => 0));
+        }
+    }
+
+    private void UpdateProgress(long id, RunResult result, int completed, int total)
+    {
+        lock (gate)
+        {
+            if (!running || id != runId || progress is null)
+            {
+                return;
+            }
+
+            var counts = new Dictionary<string, int>(progress.ByScenario);
+            counts[result.Scenario] = counts.GetValueOrDefault(result.Scenario) + 1;
+            progress = new RunProgress(completed == total ? "saving" : "running", completed, total,
+                result.Scenario, result.Seed, result.Status.ToString(), result.Metric?.Q, result.Metric?.R, counts);
+        }
+    }
+
+    private string RunOnce(string liveDir, long id)
     {
         var configJson = File.ReadAllText(Repo.Config);
         var config = TeamConfig.Parse(configJson);
@@ -177,9 +236,13 @@ internal sealed class LiveRun(Func<string>? run = null, double timeoutSeconds = 
             (scenario, seed) => new ChannelBridge(ChannelBridge.ScenarioJson(configJson, scenario), seed, bridge),
             () => new TelemetrySystem(config, new Scheduler()),
             log);
+        var scenarios = config.Channel.Scenarios.Keys.ToArray();
+        var seeds = RunSeeds.Default(config.Channel.Seed);
+        SetProgress(id, scenarios, seeds.Count);
         var report = runner.Run(
             () => SessionCsv.Load(Repo.Session, log),
-            new RunSettings(config, [.. config.Channel.Scenarios.Keys], RunSeeds.Default(config.Channel.Seed), liveDir, config.FullRunLimitSeconds));
+            new RunSettings(config, scenarios, seeds, liveDir, config.FullRunLimitSeconds),
+            (result, completed, total) => UpdateProgress(id, result, completed, total));
         if (!report.AllOk)
         {
             throw new InvalidOperationException("частина прогонів не завершилась, деталі в out/present-live/runner.log");
