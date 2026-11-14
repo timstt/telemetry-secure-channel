@@ -23,7 +23,7 @@ public class ReceiverTrapTests
         return data;
     }
 
-    [Theory(Skip = TestData.Pending)]
+    [Theory]
     [MemberData(nameof(BadPackets))]
     public void Bad_packets_give_expected_code(string file, string code)
     {
@@ -32,14 +32,14 @@ public class ReceiverTrapTests
         Assert.Null(r.Payload);
     }
 
-    [Fact(Skip = TestData.Pending)]
+    [Fact]
     public void Trap05_oversized_ref04_is_accepted()
     {
         var r = NewReceiver().Accept(File.ReadAllBytes(TestData.Reference("ref_04_session.bin")));
         Assert.True(r.Ok); // 771 Б > max_packet_bytes = 512 — це НЕ підстава для відмови
     }
 
-    [Fact(Skip = TestData.Pending)]
+    [Fact]
     public void Trap06_wrong_password_is_E_HMAC_not_garbage()
     {
         var r = NewReceiver("wrong").Accept(File.ReadAllBytes(TestData.Reference("ref_01_single_frame.bin")));
@@ -47,21 +47,29 @@ public class ReceiverTrapTests
         Assert.Null(r.Payload);
     }
 
-    [Fact(Skip = TestData.Pending)]
+    [Fact]
     public void Trap06_short_packet_is_E_SHORT_without_exception()
     {
         Assert.Equal(PacketError.E_SHORT, NewReceiver().Accept(new byte[74]).Error);
         Assert.Equal(PacketError.E_SHORT, NewReceiver().Accept([]).Error);
     }
 
-    [Fact(Skip = TestData.Pending)]
+    [Fact]
     public void Trap15_unknown_extension_flag_is_E_PAYLOAD()
     {
-        // Потребує допоміжного Seal з правильними ключами: пакет із flags = 0x01 (PREDICTION).
-        Assert.Fail("Зібрати пакет з flags & 0x03 != 0 і перевірити E_PAYLOAD");
+        var header = File.ReadAllBytes(TestData.Reference("ref_01_single_frame.bin"))[..43];
+        foreach (byte flag in new byte[] { 0x01, 0x02, 0x03 })
+        {
+            var plaintext = TestData.Hex("0001 00 00 0007 0001 0103 0304 D704 E804 FD04 FF03 0000000C 00000004 0CE6DF90");
+            plaintext[2] = flag;
+            var packet = new Telemetry.Security.SessionCrypto("algo2026").Seal(header, plaintext);
+            var r = NewReceiver().Accept(packet);
+            Assert.Equal(PacketError.E_PAYLOAD, r.Error);
+            Assert.Null(r.Payload);
+        }
     }
 
-    [Fact(Skip = TestData.Pending)]
+    [Fact]
     public void Trap16_duplicates_and_reordering_do_not_break_receiver()
     {
         var rx = NewReceiver();
@@ -74,7 +82,7 @@ public class ReceiverTrapTests
         Assert.Equal(ts.Order().ToArray(), ts);
     }
 
-    [Theory(Skip = TestData.Pending)]
+    [Theory]
     [InlineData("ref_01_single_frame")]
     [InlineData("ref_02_empty")]
     [InlineData("ref_03_degenerate")]

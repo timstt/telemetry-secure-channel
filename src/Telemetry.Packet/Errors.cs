@@ -12,6 +12,10 @@ public sealed class PacketFormatException : Exception
     public PacketFormatException(PacketError code)
         : base(code.ToString()) => Code = code;
 
+    /// <summary>Виняток із кодом відмови і причиною (причина не містить вмісту пакета).</summary>
+    public PacketFormatException(PacketError code, Exception innerException)
+        : base(code.ToString(), innerException) => Code = code;
+
     /// <summary>Порожній конструктор (вимога аналізатора).</summary>
     public PacketFormatException()
         : this(PacketError.E_PAYLOAD)
