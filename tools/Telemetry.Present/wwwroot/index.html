@@ -127,6 +127,24 @@ svg text { font-family: inherit; }
 .sk { color: var(--muted); }
 footer { padding: 30px 0 60px; color: var(--muted); font-size: 13px; }
 .unavailable { color: var(--ink2); background: var(--wash); border-radius: 10px; padding: 12px 14px; font-size: 14px; }
+.run-panel { border: 1px solid var(--s1); border-radius: 16px; background: var(--surface); padding: 18px 20px; margin: 0 0 18px; box-shadow: 0 8px 30px rgba(42,120,214,.08); }
+.run-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.run-head h3 { font-size: 17px; margin: 0; }
+.run-badge { color: var(--seq); background: var(--wash); border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 700; }
+.run-count { font-size: 29px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; margin: 14px 0 5px; }
+.run-count small { color: var(--muted); font-size: 15px; font-weight: 500; }
+.run-track { height: 11px; background: var(--grid); border-radius: 999px; overflow: hidden; }
+.run-fill { height: 100%; background: var(--s1); border-radius: inherit; transition: width .25s ease; }
+.run-scenarios { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+.run-scenario { background: var(--wash); border-radius: 8px; padding: 6px 10px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.run-scenario b { color: var(--seq); }
+.run-last { color: var(--ink2); font-size: 13px; margin: 8px 0 0; }
+.run-evidence { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; margin: 12px 0 0; font-size: 13px; color: var(--ink2); }
+.run-evidence a { color: var(--seq); font-weight: 600; text-underline-offset: 2px; }
+.run-details { margin-top: 14px; border-top: 1px solid var(--grid); padding-top: 10px; }
+.run-details summary { cursor: pointer; color: var(--seq); font-size: 13px; font-weight: 600; }
+.run-details .tw { margin-top: 9px; }
+@media (prefers-reduced-motion: reduce) { .run-fill { transition: none; } }
 @media (max-width: 640px) {
   .hrow { grid-template-columns: 1fr; gap: 4px; }
   .rows.hasrefs .hrow:first-child .track { margin-top: 18px; }
@@ -200,6 +218,7 @@ footer { padding: 30px 0 60px; color: var(--muted); font-size: 13px; }
   <section id="system" class="sec">
     <div class="sechead"><span class="no">4</span><h2>Система: черга, канал і підсумкове Q</h2><span class="owner">Тимофій · інтеграція</span></div>
     <p class="lead">Жадібна черга відправлення, три сценарії каналу й п'ять seed на кожен. Кнопка «Запустити прогін» виконує повний прохід системи через справжній канал.</p>
+    <div id="runPanel" role="status" aria-live="polite"></div>
     <div class="grid wide" id="systemBody"></div>
   </section>
 
@@ -602,12 +621,53 @@ function renderSecure() {
 /* ---------- запуск і стан ---------- */
 const banner = $('#banner');
 function showBanner(text) { banner.textContent = text || ''; banner.classList.toggle('show', !!text); }
+function renderRunPanel(st) {
+  const host = $('#runPanel'); host.replaceChildren();
+  if (!st?.progress && !st?.hasData) return;
+  const p = st.progress, report = st.results;
+  const active = !!st.running, failed = p?.stage === 'failed' || p?.stage === 'timeout';
+  const total = p?.total || report?.Runs?.length || 0;
+  const completed = p ? p.completed : report?.Runs?.length || 0;
+  const title = active ? 'Прогін системи виконується' : failed ? 'Новий прогін не завершився' : p?.stage === 'done' ? 'Новий прогін завершено' : 'Останній збережений звіт';
+  const badge = active ? 'ЗАРАЗ' : failed ? 'ПОМИЛКА' : p?.stage === 'done' ? 'ГОТОВО' : 'ЗБЕРЕЖЕНО';
+  const panel = el('div', { class: 'run-panel' },
+    el('div', { class: 'run-head' }, el('div', {}, el('h3', {}, title), el('div', { class: 'hint' }, 'Кожен крок — окремий запуск сценарію з власним seed каналу.')), el('span', { class: 'run-badge' }, badge)));
+  if (total) {
+    panel.append(el('div', { class: 'run-count' }, completed, ' ', el('small', {}, `/ ${total} запусків`)),
+      el('div', { class: 'run-track', role: 'progressbar', 'aria-label': 'Завершені запуски', 'aria-valuemin': '0', 'aria-valuemax': total, 'aria-valuenow': completed },
+        el('div', { class: 'run-fill', style: { width: `${Math.min(100, completed / total * 100)}%` } })));
+    const counts = p?.byScenario || Object.fromEntries((report?.Scenarios || []).map(s => [s.Scenario, s.Completed]));
+    const seedCount = report?.Seeds?.length || (p?.total ? p.total / Object.keys(counts).length : 0);
+    panel.append(el('div', { class: 'run-scenarios' }, Object.entries(counts).map(([name, count]) =>
+      el('div', { class: 'run-scenario' }, name, ' · ', el('b', {}, `${count}/${seedCount}`)))));
+  } else if (active) {
+    panel.append(el('p', { class: 'run-last' }, 'Готуємо сеанс і канал…'));
+  }
+  if (p?.lastScenario) {
+    const metrics = p.lastQ == null ? '' : ` · Q ${f(p.lastQ, 4)} · R ${f(p.lastR, 4)}`;
+    const status = { Ok: 'завершено', Failed: 'помилка', Skipped: 'пропущено', ReceiverCrashed: 'збій приймача' }[p.lastStatus] || p.lastStatus;
+    panel.append(el('p', { class: 'run-last' }, `Останній: ${p.lastScenario}, seed ${p.lastSeed} · ${status}${metrics}`));
+  }
+  if (p?.stage === 'saving') panel.append(el('p', { class: 'run-last' }, 'Записуємо підсумковий звіт…'));
+  if (report) {
+    const label = active || failed ? 'Попередній JSON-звіт' : 'Відкрити JSON-звіт';
+    panel.append(el('div', { class: 'run-evidence' },
+      el('span', {}, `${report.Runs.length} записів · ${report.Seeds.length} seed · ${f(report.ElapsedSeconds, 2)} с`),
+      st.updated ? el('span', {}, `Оновлено о ${st.updated}`) : null,
+      el('a', { href: '/api/report', target: '_blank', rel: 'noopener' }, label, ' ↗')),
+      el('p', { class: 'run-last' }, 'Підсумки Q у розділі нижче взято з цього звіту.'),
+      el('details', { class: 'run-details' }, el('summary', {}, `Результат кожного seed (${report.Runs.length})`),
+        table(['Сценарій', 'Seed', 'Q', 'R', 'Стан'], report.Runs.map(r => [r.Scenario, r.Seed,
+          r.Metric ? f(r.Metric.Q, 4) : '—', r.Metric ? f(r.Metric.R, 4) : '—', r.Status === 'Ok' ? 'завершено' : r.Status]), [1, 2, 3])));
+  }
+  host.append(panel);
+}
 function apply(st) {
   state = st;
   $('#source').textContent = st.hasData ? `Runner: ${st.source}` : 'Runner: немає даних';
   showBanner(st.error);
   $('#run').disabled = !!st.running; $('#run').textContent = st.running ? 'Прогін іде…' : 'Запустити прогін';
-  renderHero(); renderSystem();
+  renderRunPanel(st); renderHero(); renderSystem();
 }
 async function getState() { try { const r = await fetch('/api/state', { cache: 'no-store' }); return r.ok ? await r.json() : null; } catch { return null; } }
 let polling = false;
@@ -619,19 +679,23 @@ async function pollRun() {
     while (Date.now() - started < 110000) {
       await sleep(500);
       const st = await getState();
-      if (!st) { showBanner('Немає зв\'язку із сервером сторінки. Показані попередні результати.'); return; }
+      if (!st) {
+        showBanner('Немає зв\'язку із сервером сторінки. Показані попередні результати.');
+        $('#run').disabled = false; $('#run').textContent = 'Запустити прогін';
+        return;
+      }
       apply(st);
       if (!st.running) return;
     }
     showBanner('Прогін усе ще виконується. Оновіть сторінку, щоб перевірити його стан.');
   } finally {
     polling = false;
-    $('#run').disabled = false;
-    $('#run').textContent = 'Запустити прогін';
   }
 }
 async function runNow() {
   $('#run').disabled = true; $('#run').textContent = 'Прогін іде…'; showBanner('');
+  $('#system').scrollIntoView();
+  $('#runPanel').replaceChildren(el('div', { class: 'run-panel' }, el('div', { class: 'run-head' }, el('h3', {}, 'Запускаємо повний прогін…'), el('span', { class: 'run-badge' }, 'ЗАРАЗ'))));
   try {
     const r = await fetch('/api/run', { method: 'POST' });
     if (r.status !== 202 && r.status !== 409) throw new Error(`сервер відповів ${r.status}`);
@@ -643,8 +707,10 @@ async function runNow() {
         return;
       }
     }
+    const st = await getState(); if (st) apply(st);
     await pollRun();
   } catch (e) {
+    if (state) apply(state); else $('#runPanel').replaceChildren();
     showBanner(`Не вдалося запустити прогін: ${e.message}. Показані попередні результати.`);
     $('#run').disabled = false;
     $('#run').textContent = 'Запустити прогін';

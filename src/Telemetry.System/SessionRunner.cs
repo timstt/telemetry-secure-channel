@@ -112,7 +112,8 @@ public sealed class SessionRunner(
     /// <summary>Виконує повний прогін і пише результати в <see cref="RunSettings.OutputDirectory"/>.</summary>
     /// <param name="loadFrames">Завантаження кадрів сеансу (один раз на прогін).</param>
     /// <param name="settings">Налаштування.</param>
-    public RunReport Run(Func<IReadOnlyList<Frame>> loadFrames, RunSettings settings)
+    /// <param name="onRunCompleted">Необов'язковий стан після кожної пари сценарій × seed.</param>
+    public RunReport Run(Func<IReadOnlyList<Frame>> loadFrames, RunSettings settings, Action<RunResult, int, int>? onRunCompleted = null)
     {
         ArgumentNullException.ThrowIfNull(loadFrames);
         ArgumentNullException.ThrowIfNull(settings);
@@ -138,23 +139,28 @@ public sealed class SessionRunner(
         }
 
         var runs = new List<RunResult>();
+        var totalRuns = settings.Scenarios.Count * settings.Seeds.Count;
         foreach (var scenario in settings.Scenarios)
         {
             foreach (var seed in settings.Seeds)
             {
+                RunResult result;
                 if (total.Elapsed.TotalSeconds > settings.TimeLimitSeconds)
                 {
                     log.Warn(string.Create(CultureInfo.InvariantCulture, $"{scenario}/{seed}: пропущено, ліміт {settings.TimeLimitSeconds} с вичерпано"));
-                    runs.Add(Empty(scenario, seed, RunStatus.Skipped, frames, "ліміт часу повного прогону вичерпано"));
+                    result = Empty(scenario, seed, RunStatus.Skipped, frames, "ліміт часу повного прогону вичерпано");
                 }
                 else if (frames is null)
                 {
-                    runs.Add(Empty(scenario, seed, RunStatus.Failed, null, loadError));
+                    result = Empty(scenario, seed, RunStatus.Failed, null, loadError);
                 }
                 else
                 {
-                    runs.Add(RunOne(scenario, seed, frames, settings));
+                    result = RunOne(scenario, seed, frames, settings);
                 }
+
+                runs.Add(result);
+                onRunCompleted?.Invoke(result, runs.Count, totalRuns);
             }
         }
 

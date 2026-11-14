@@ -31,6 +31,8 @@ public class LiveRunTests
         Assert.Null(state["error"]);
         Assert.Equal("живий прогін", (string)state["source"]!);
         Assert.Equal(1, (int)state["runs"]!);
+        Assert.Equal("done", (string)state["progress"]!["stage"]!);
+        Assert.Equal(GoodJson, live.ResultJson());
     }
 
     [Fact]

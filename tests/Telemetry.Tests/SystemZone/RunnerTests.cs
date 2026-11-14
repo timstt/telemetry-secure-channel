@@ -315,6 +315,19 @@ public sealed class RunnerTests : IDisposable
     }
 
     [Fact]
+    public void Progress_reports_each_completed_scenario_and_seed()
+    {
+        using var log = new RunLog(new StringWriter(), []);
+        var runner = new SessionRunner((_, _) => new FakeChannel(), () => new LoopbackSystem(), log);
+        var updates = new List<(RunResult Result, int Completed, int Total)>();
+        var report = runner.Run(() => SampleFrames(5), Settings(120), (result, completed, total) => updates.Add((result, completed, total)));
+
+        Assert.Equal(report.Runs, updates.Select(update => update.Result));
+        Assert.Equal(Enumerable.Range(1, report.Runs.Count), updates.Select(update => update.Completed));
+        Assert.All(updates, update => Assert.Equal(report.Runs.Count, update.Total));
+    }
+
+    [Fact]
     public void Real_team_system_never_crashes_the_runner()
     {
         // Працює і з заглушками зон (прогони Failed), і після інтеграції (Ok): Runner не падає, лог чистий.

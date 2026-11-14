@@ -75,6 +75,11 @@ internal sealed class Server(LiveRun live, string overviewJson, string preflight
             {
                 Send(context, 200, "application/json; charset=utf-8", live.State().ToJsonString());
             }
+            else if (method == "GET" && path == "/api/report")
+            {
+                var report = live.ResultJson();
+                Send(context, report is null ? 404 : 200, "application/json; charset=utf-8", report ?? "{\"error\":\"немає результатів\"}");
+            }
             else if (method == "POST" && path == "/api/run")
             {
                 if (!SameOrigin(context))
